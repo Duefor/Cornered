@@ -211,24 +211,70 @@ object CardPool {
         exhaust = true,
     )
 
-    val starterDeck: List<Card> =
+    // ---------------------------------------------------------------- 影刃起始牌
+    val dagger = Card(
+        id = "dagger",
+        name = "匕首",
+        cost = 0,
+        type = CardType.Attack,
+        rarity = Rarity.Common,
+        target = Target.Enemy,
+        description = "3 点伤害",
+        effects = listOf(Effect.Damage(3)),
+    )
+
+    val dodge = Card(
+        id = "dodge",
+        name = "闪避",
+        cost = 1,
+        type = CardType.Skill,
+        rarity = Rarity.Common,
+        target = Target.Self,
+        description = "4 点格挡",
+        effects = listOf(Effect.Block(4)),
+    )
+
+    val shadowStrike = Card(
+        id = "shadow_strike",
+        name = "影袭",
+        cost = 1,
+        type = CardType.Attack,
+        rarity = Rarity.Common,
+        target = Target.Enemy,
+        description = "4 伤害 + 抽 1",
+        effects = listOf(Effect.Damage(4), Effect.Draw(1)),
+    )
+
+    // ---------------------------------------------------------------- 角色卡池
+    val ironcladDeck: List<Card> =
         List(5) { strike } + List(4) { defend } + listOf(bash)
 
-    val rewards: List<Card> = listOf(
+    val shadowDeck: List<Card> =
+        List(4) { dagger } + List(4) { dodge } + List(2) { shadowStrike }
+
+    val ironcladRewards: List<Card> = listOf(
         cleave, twinStrike, ironWall, quickStep, guard,
         rend, intimidate, flex, heavyBlow, lifesteal, battleTrance, recharge,
         berserk, whirlwind, impervious,
     )
 
+    val shadowRewards: List<Card> = listOf(
+        dagger, shadowStrike, twinStrike, cleave, quickStep, guard,
+        rend, intimidate, flex, battleTrance, recharge, lifesteal,
+        berserk, whirlwind, impervious,
+    )
+
+    private val allCards: List<Card> =
+        (ironcladDeck + ironcladRewards + shadowDeck + shadowRewards).distinctBy { it.id }
+
     /** 按 id 找卡：存档/读档用。 */
     fun byId(id: String): Card? = allById[id]
 
-    private val allById: Map<String, Card> by lazy {
-        (starterDeck + rewards).associateBy { it.id }
-    }
-    /** 按稀有度权重抽 [count] 张不重复的卡作为战后奖励。 */
-    fun rewardChoices(rng: Random, count: Int = 3): List<Card> {
-        val pool = rewards.toMutableList()
+    private val allById: Map<String, Card> by lazy { allCards.associateBy { it.id } }
+
+    /** 按稀有度权重从指定卡池抽 [count] 张不重复的卡作为战后奖励。 */
+    fun rewardChoices(rng: Random, source: List<Card>, count: Int = 3): List<Card> {
+        val pool = source.toMutableList()
         val picked = mutableListOf<Card>()
         repeat(count.coerceAtMost(pool.size)) {
             val totalWeight = pool.sumOf { it.rarity.weight }

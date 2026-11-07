@@ -12,7 +12,7 @@ class RunFlowTest {
     @Test
     fun `a full run always reaches a terminal phase`() {
         repeat(5) { seed ->
-            val run = RunState.newRun(seed.toLong())
+            val run = RunState.newRun(seed = seed.toLong())
             var steps = 0
 
             while (steps < 20_000 && run.phase != RunPhase.Victory && run.phase != RunPhase.Defeat) {

@@ -11,7 +11,7 @@ class RunCodecTest {
 
     @Test
     fun `round trip keeps run and combat state`() {
-        val run = RunState.newRun(42)
+        val run = RunState.newRun(seed = 42)
         run.enterNode(run.reachable.first())
 
         val engine = run.combat
@@ -51,7 +51,7 @@ class RunCodecTest {
 
     @Test
     fun `map is rebuilt identically from the saved seed`() {
-        val run = RunState.newRun(7)
+        val run = RunState.newRun(seed = 7)
         val restored = RunCodec.decode(RunCodec.encode(run))!!
         assertEquals(run.map.nodes.size, restored.map.nodes.size)
         run.map.nodes.forEachIndexed { index, node ->
@@ -62,7 +62,7 @@ class RunCodecTest {
 
     @Test
     fun `reward screen state survives a round trip`() {
-        val run = RunState.newRun(11)
+        val run = RunState.newRun(seed = 11)
         run.enterNode(run.reachable.first())
         val engine = run.combat!!
         // 直接打死敌人，进入奖励阶段

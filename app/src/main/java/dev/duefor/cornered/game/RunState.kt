@@ -15,15 +15,16 @@ class RunState(
     /** 地图是种子生成的，存档只存种子，读档时重新生成同一张图 */
     val mapSeed: Long,
     val map: GameMap,
+    val character: Character = Characters.default,
 ) {
-    var maxHp: Int = START_HP
+    var maxHp: Int = character.maxHp
         private set
-    var hp: Int = START_HP
+    var hp: Int = character.maxHp
         private set
     var gold: Int = 0
         private set
 
-    val deck: MutableList<Card> = CardPool.starterDeck.toMutableList()
+    val deck: MutableList<Card> = character.starterDeck.toMutableList()
 
     var phase: RunPhase = RunPhase.Map
         private set
@@ -56,7 +57,15 @@ class RunState(
                 val enemies = EnemyPool.forNode(node.type, node.floor, rng).map { def ->
                     EnemyState(def, rng.nextInt(def.minHp, def.maxHp + 1))
                 }
-                combat = CombatEngine(hp, maxHp, deck, enemies, rng)
+                combat = CombatEngine(
+                    startHp = hp,
+                    maxHp = maxHp,
+                    deck = deck,
+                    enemies = enemies,
+                    rng = rng,
+                    maxEnergy = character.maxEnergy,
+                    handSize = character.handSize,
+                )
                 phase = RunPhase.Combat
             }
 
@@ -85,7 +94,7 @@ class RunState(
             else -> 15 + rng.nextInt(11)
         }
         gold += lastGoldGain
-        rewardCards = CardPool.rewardChoices(rng)
+        rewardCards = CardPool.rewardChoices(rng, character.rewardPool)
         phase = RunPhase.Reward
     }
 
@@ -130,12 +139,14 @@ class RunState(
     }
 
     companion object {
-        const val START_HP = 80
-
-        fun newRun(seed: Long = System.nanoTime()): RunState = RunState(
+        fun newRun(
+            character: Character = Characters.default,
+            seed: Long = System.nanoTime(),
+        ): RunState = RunState(
             rng = Random(seed),
             mapSeed = seed,
             map = MapGenerator.generate(Random(seed * 31 + 7)),
+            character = character,
         )
 
         /** 读档：地图由 [mapSeed] 重建，其余字段从存档回填。 */
@@ -143,6 +154,7 @@ class RunState(
             rng: Random,
             mapSeed: Long,
             map: GameMap,
+            character: Character,
             hp: Int,
             maxHp: Int,
             gold: Int,
@@ -155,7 +167,7 @@ class RunState(
             rewardCards: List<Card>,
             lastGoldGain: Int,
         ): RunState {
-            val run = RunState(rng, mapSeed, map)
+            val run = RunState(rng, mapSeed, map, character)
             run.hp = hp.coerceIn(0, maxHp)
             run.maxHp = maxHp
             run.gold = gold

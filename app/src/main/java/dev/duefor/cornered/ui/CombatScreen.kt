@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
 import dev.duefor.cornered.game.CombatEngine
 import dev.duefor.cornered.game.EnemyState
@@ -159,24 +161,40 @@ fun CombatScreen(
             )
         }
 
+        // 手牌：叠扇排列。手牌多时按剩余宽度自动加大重叠，选中的那张抬起来并置顶。
         BoxWithConstraints(Modifier.fillMaxWidth()) {
-            // 5 张手牌尽量在一屏内放下，窄屏时自动收窄
-            val cardWidth: Dp = ((maxWidth - 24.dp) / 5).coerceIn(60.dp, 92.dp)
-            Row(
+            val cardWidth = 84.dp
+            val cardHeight = cardWidth * 1.62f
+            val cards = engine.hand.toList()
+            val available = maxWidth
+            val step = if (cards.size <= 1) 0.dp else minOf(
+                cardWidth + 6.dp,
+                (available - cardWidth) / (cards.size - 1),
+            )
+            val totalWidth = cardWidth + step * (cards.size - 1)
+            val startX = ((available - totalWidth) / 2).coerceAtLeast(0.dp)
+
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    .height(cardHeight + 10.dp)
+                    .padding(vertical = 4.dp),
             ) {
-                engine.hand.toList().forEachIndexed { index, card ->
-                    CardView(
-                        card = card,
-                        width = cardWidth,
-                        playable = engine.canPlay(index),
-                        selected = selectedIndex == index,
-                        onClick = { tapCard(index) },
-                    )
+                cards.forEachIndexed { index, card ->
+                    val isSelected = selectedIndex == index
+                    Box(
+                        modifier = Modifier
+                            .offset(x = startX + step * index, y = if (isSelected) 0.dp else 8.dp)
+                            .zIndex(if (isSelected) 1f else index.toFloat()),
+                    ) {
+                        CardView(
+                            card = card,
+                            width = cardWidth,
+                            playable = engine.canPlay(index),
+                            selected = isSelected,
+                            onClick = { tapCard(index) },
+                        )
+                    }
                 }
             }
         }
@@ -188,7 +206,7 @@ fun CombatScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            EnergyDisplay(energy = engine.energy, max = CombatEngine.MAX_ENERGY)
+            EnergyDisplay(energy = engine.energy, max = engine.maxEnergy)
             Button(
                 onClick = {
                     engine.endTurn()

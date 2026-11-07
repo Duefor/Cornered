@@ -46,6 +46,7 @@ fun CardView(
     selected: Boolean = false,
     onClick: () -> Unit = {},
 ) {
+    val compact = width < 64.dp
     val accent = card.type.accentColor()
     val shape = RoundedCornerShape(12.dp)
     val borderColor = when {
@@ -63,7 +64,7 @@ fun CardView(
     Column(
         modifier = modifier
             .width(width)
-            .height(width * 1.46f)
+            .height(width * 1.62f)
             .clip(shape)
             .background(background)
             .border(if (selected) 2.dp else 1.dp, borderColor, shape)
@@ -92,7 +93,7 @@ fun CardView(
         Spacer(Modifier.height(6.dp))
         Text(
             text = card.name,
-            fontSize = 13.sp,
+            fontSize = if (compact) 11.sp else 13.sp,
             fontWeight = FontWeight.Bold,
             color = if (playable) Ink else InkMuted,
             maxLines = 1,
@@ -101,8 +102,8 @@ fun CardView(
         Spacer(Modifier.height(5.dp))
         Text(
             text = card.description,
-            fontSize = 9.sp,
-            lineHeight = 12.sp,
+            fontSize = if (compact) 8.sp else 9.sp,
+            lineHeight = if (compact) 10.sp else 12.sp,
             color = Ink.copy(alpha = if (playable) 0.85f else 0.45f),
             overflow = TextOverflow.Ellipsis,
         )

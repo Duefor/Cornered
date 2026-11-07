@@ -31,8 +31,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.duefor.cornered.data.RunRecords
 import dev.duefor.cornered.data.RunRepository
+import dev.duefor.cornered.game.Character
+import dev.duefor.cornered.game.Characters
 import dev.duefor.cornered.game.RunPhase
 import dev.duefor.cornered.game.RunState
+import dev.duefor.cornered.ui.CharacterScreen
 import dev.duefor.cornered.ui.MenuScreen
 import dev.duefor.cornered.ui.RunScreen
 import dev.duefor.cornered.ui.theme.ArenaBackground
@@ -60,7 +63,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Screen { Menu, Run }
+private enum class Screen { Menu, Character, Run }
 
 @Composable
 private fun CorneredApp() {
@@ -89,10 +92,10 @@ private fun CorneredApp() {
         if (updater.message == current) updater.message = null
     }
 
-    fun startNewRun() {
+    fun startNewRun(character: Character) {
         repository.clear()
         hasSave = false
-        run = RunState.newRun()
+        run = RunState.newRun(character)
         screen = Screen.Run
     }
 
@@ -119,13 +122,19 @@ private fun CorneredApp() {
                 version = BuildConfig.VERSION_NAME,
                 checking = updater.checking,
                 onContinue = { continueRun() },
-                onPlay = { startNewRun() },
+                onPlay = { screen = Screen.Character },
                 onCheckUpdate = {
                     scope.launch {
                         updater.check(silent = false)
                         if (updater.release != null) showUpdate = true
                     }
                 },
+            )
+
+            Screen.Character -> CharacterScreen(
+                characters = Characters.all,
+                onStart = { character -> startNewRun(character) },
+                onBack = { screen = Screen.Menu },
             )
 
             Screen.Run -> {
@@ -137,7 +146,7 @@ private fun CorneredApp() {
                             screen = Screen.Menu
                             hasSave = repository.hasSave()
                         },
-                        onRestart = { startNewRun() },
+                        onRestart = { startNewRun(current.character) },
                         onRunEnd = { victory, floor ->
                             records.record(floor, victory)
                             if (floor > bestFloor) bestFloor = floor

@@ -2,6 +2,7 @@ package dev.duefor.cornered.data
 
 import dev.duefor.cornered.game.Card
 import dev.duefor.cornered.game.CardPool
+import dev.duefor.cornered.game.Characters
 import dev.duefor.cornered.game.CombatEngine
 import dev.duefor.cornered.game.CombatPhase
 import dev.duefor.cornered.game.CombatSnapshot
@@ -30,6 +31,7 @@ object RunCodec {
         val json = JSONObject()
         json.put("version", VERSION)
         json.put("mapSeed", run.mapSeed)
+        json.put("character", run.character.id)
         json.put("hp", run.hp)
         json.put("maxHp", run.maxHp)
         json.put("gold", run.gold)
@@ -49,6 +51,8 @@ object RunCodec {
         require(json.getInt("version") == VERSION) { "存档版本不匹配" }
 
         val mapSeed = json.getLong("mapSeed")
+        // 老存档没有 character 字段，默认回落第一个角色
+        val character = Characters.byId(json.optString("character")) ?: Characters.default
         val map: GameMap = MapGenerator.generate(Random(mapSeed * 31 + 7))
 
         val reachableArray = json.getJSONArray("reachable")
@@ -63,6 +67,7 @@ object RunCodec {
             rng = Random(mapSeed xor 0x5DEECE66DL),
             mapSeed = mapSeed,
             map = map,
+            character = character,
             hp = json.getInt("hp"),
             maxHp = json.getInt("maxHp"),
             gold = json.getInt("gold"),
@@ -108,6 +113,8 @@ object RunCodec {
         return JSONObject().apply {
             put("hp", snap.hp)
             put("maxHp", snap.maxHp)
+            put("maxEnergy", snap.maxEnergy)
+            put("handSize", snap.handSize)
             put("block", snap.block)
             put("energy", snap.energy)
             put("turn", snap.turn)
@@ -154,8 +161,10 @@ object RunCodec {
         val snapshot = CombatSnapshot(
             hp = json.getInt("hp"),
             maxHp = json.getInt("maxHp"),
+            maxEnergy = json.optInt("maxEnergy", CombatEngine.DEFAULT_MAX_ENERGY),
+            handSize = json.optInt("handSize", CombatEngine.DEFAULT_HAND_SIZE),
             block = json.optInt("block", 0),
-            energy = json.optInt("energy", CombatEngine.MAX_ENERGY),
+            energy = json.optInt("energy", CombatEngine.DEFAULT_MAX_ENERGY),
             turn = json.optInt("turn", 1),
             phase = CombatPhase.valueOf(json.getString("phase")),
             statuses = statuses(json.optJSONObject("statuses") ?: JSONObject()),

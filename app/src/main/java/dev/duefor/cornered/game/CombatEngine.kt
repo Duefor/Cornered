@@ -23,6 +23,8 @@ class EnemyState(val def: EnemyDef, hp: Int) {
 data class CombatSnapshot(
     val hp: Int,
     val maxHp: Int,
+    val maxEnergy: Int,
+    val handSize: Int,
     val block: Int,
     val energy: Int,
     val turn: Int,
@@ -52,6 +54,8 @@ data class EnemySnapshot(
  */
 class CombatEngine private constructor(
     val maxHp: Int,
+    val maxEnergy: Int,
+    val handSize: Int,
     val enemies: List<EnemyState>,
     private val rng: Random,
 ) {
@@ -59,7 +63,7 @@ class CombatEngine private constructor(
         private set
     var block: Int = 0
         private set
-    var energy: Int = MAX_ENERGY
+    var energy: Int = maxEnergy
         private set
     var turn: Int = 1
         private set
@@ -80,11 +84,13 @@ class CombatEngine private constructor(
         deck: List<Card>,
         enemies: List<EnemyState>,
         rng: Random,
-    ) : this(maxHp, enemies, rng) {
+        maxEnergy: Int = DEFAULT_MAX_ENERGY,
+        handSize: Int = DEFAULT_HAND_SIZE,
+    ) : this(maxHp, maxEnergy, handSize, enemies, rng) {
         hp = startHp.coerceIn(0, maxHp)
         drawPile.addAll(deck)
         drawPile.shuffle(rng)
-        draw(HAND_SIZE)
+        draw(handSize)
     }
 
     val aliveEnemies: List<EnemyState> get() = enemies.filter { it.alive }
@@ -155,6 +161,8 @@ class CombatEngine private constructor(
     fun snapshot(): CombatSnapshot = CombatSnapshot(
         hp = hp,
         maxHp = maxHp,
+        maxEnergy = maxEnergy,
+        handSize = handSize,
         block = block,
         energy = energy,
         turn = turn,
@@ -174,9 +182,9 @@ class CombatEngine private constructor(
     private fun startPlayerTurn() {
         turn++
         block = 0
-        energy = MAX_ENERGY
+        energy = maxEnergy
         phase = CombatPhase.PlayerTurn
-        draw(HAND_SIZE)
+        draw(handSize)
     }
 
     private fun runEnemyTurn() {
@@ -310,8 +318,8 @@ class CombatEngine private constructor(
     }
 
     companion object {
-        const val MAX_ENERGY = 3
-        const val HAND_SIZE = 5
+        const val DEFAULT_MAX_ENERGY = 3
+        const val DEFAULT_HAND_SIZE = 5
 
         private val DURATION_STATUSES = listOf(Status.Vulnerable, Status.Weak, Status.Frail)
 
@@ -325,7 +333,7 @@ class CombatEngine private constructor(
                     moveIndex = save.moveIndex
                 }
             }
-            val engine = CombatEngine(snapshot.maxHp, enemies, rng)
+            val engine = CombatEngine(snapshot.maxHp, snapshot.maxEnergy, snapshot.handSize, enemies, rng)
             engine.hp = snapshot.hp
             engine.block = snapshot.block
             engine.energy = snapshot.energy
