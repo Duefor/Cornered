@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import dev.duefor.cornered.BuildConfig
 import java.io.File
@@ -57,12 +58,13 @@ object ApkInstaller {
                 }
                 val callback = Intent(context, InstallResultReceiver::class.java)
                     .setAction(InstallResultReceiver.ACTION_INSTALL_RESULT)
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    sessionId,
-                    callback,
-                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-                )
+                // 31 起必须显式声明可变性；更早的系统默认就是可变，传未知 flag 反而不保险
+                val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                } else {
+                    PendingIntent.FLAG_UPDATE_CURRENT
+                }
+                val pendingIntent = PendingIntent.getBroadcast(context, sessionId, callback, flags)
                 session.commit(pendingIntent.intentSender)
             }
         } catch (t: Throwable) {

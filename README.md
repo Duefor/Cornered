@@ -81,6 +81,12 @@ $env:Path = "$PWD\.toolchain\jdk\bin;$env:Path"
 
 产物在 `app/build/outputs/apk/debug/`。
 
+跑单元测试（版本比较逻辑）：
+
+```powershell
+./gradlew :app:testDebugUnitTest
+```
+
 ## 发版流程
 
 版本号由 **git 标签**决定，不在代码里手改：标签 `v1.2.3` → `versionName=1.2.3`、`versionCode=10203`（主×10000 + 次×100 + 修订）。
