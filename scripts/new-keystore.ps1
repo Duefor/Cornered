@@ -29,10 +29,8 @@ if (Test-Path $keystorePath) {
 }
 
 $keytool = $null
-$candidates = @(
-    (Join-Path $repoRoot '.toolchain\jdk\bin\keytool.exe'),
-    (Join-Path $env:JAVA_HOME 'bin\keytool.exe')
-)
+$candidates = @(Join-Path $repoRoot '.toolchain\jdk\bin\keytool.exe')
+if ($env:JAVA_HOME) { $candidates += Join-Path $env:JAVA_HOME 'bin\keytool.exe' }
 foreach ($candidate in $candidates) {
     if ($candidate -and (Test-Path $candidate)) { $keytool = $candidate; break }
 }
