@@ -12,7 +12,7 @@ plugins {
 //   本地构建没传参时，用下面的默认值 + 由 versionName 推出的 versionCode。
 // versionCode 必须单调递增，否则应用内的「检查更新」和覆盖安装都会失败。
 // ---------------------------------------------------------------------------
-val fallbackVersionName = "1.0.0"
+val fallbackVersionName = "0.1.0"
 
 fun encodeVersionCode(name: String): Int {
     val parts = name.removePrefix("v").split('.')
