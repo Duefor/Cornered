@@ -32,3 +32,6 @@ output-metadata.json
 
 # 模拟器截图（本地保留，不入库）
 screenshots/
+
+# 待填进 GitHub Secrets 的签名信息
+release-secrets.txt
