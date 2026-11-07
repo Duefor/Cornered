@@ -2,7 +2,6 @@ package dev.duefor.cornered.game
 
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.random.Random
 
 /**
  * 集成测试：用一个很笨的 AI（能出的牌就出、然后结束回合）把整局从地图打到结算，
@@ -13,7 +12,7 @@ class RunFlowTest {
     @Test
     fun `a full run always reaches a terminal phase`() {
         repeat(5) { seed ->
-            val run = RunState(Random(seed), MapGenerator.generate(Random(seed)))
+            val run = RunState.newRun(seed.toLong())
             var steps = 0
 
             while (steps < 20_000 && run.phase != RunPhase.Victory && run.phase != RunPhase.Defeat) {

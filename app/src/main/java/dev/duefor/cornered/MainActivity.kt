@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,6 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.duefor.cornered.data.RunRecords
+import dev.duefor.cornered.data.RunRepository
+import dev.duefor.cornered.game.RunPhase
+import dev.duefor.cornered.game.RunState
 import dev.duefor.cornered.ui.MenuScreen
 import dev.duefor.cornered.ui.RunScreen
 import dev.duefor.cornered.ui.theme.ArenaBackground
@@ -65,10 +67,12 @@ private fun CorneredApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val records = remember { RunRecords(context.applicationContext) }
+    val repository = remember { RunRepository(context.applicationContext) }
     val updater = remember { UpdateController(context.applicationContext) }
 
     var screen by remember { mutableStateOf(Screen.Menu) }
-    var runSeed by remember { mutableLongStateOf(0L) }
+    var run by remember { mutableStateOf<RunState?>(null) }
+    var hasSave by remember { mutableStateOf(repository.hasSave()) }
     var bestFloor by remember { mutableIntStateOf(records.bestFloor) }
     var victories by remember { mutableIntStateOf(records.victories) }
     var showUpdate by remember { mutableStateOf(false) }
@@ -85,6 +89,23 @@ private fun CorneredApp() {
         if (updater.message == current) updater.message = null
     }
 
+    fun startNewRun() {
+        repository.clear()
+        hasSave = false
+        run = RunState.newRun()
+        screen = Screen.Run
+    }
+
+    fun continueRun() {
+        val loaded = repository.load()
+        if (loaded != null) {
+            run = loaded
+            screen = Screen.Run
+        } else {
+            hasSave = false
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -94,12 +115,11 @@ private fun CorneredApp() {
             Screen.Menu -> MenuScreen(
                 bestFloor = bestFloor,
                 victories = victories,
+                hasSave = hasSave,
                 version = BuildConfig.VERSION_NAME,
                 checking = updater.checking,
-                onPlay = {
-                    runSeed = System.nanoTime()
-                    screen = Screen.Run
-                },
+                onContinue = { continueRun() },
+                onPlay = { startNewRun() },
                 onCheckUpdate = {
                     scope.launch {
                         updater.check(silent = false)
@@ -108,16 +128,32 @@ private fun CorneredApp() {
                 },
             )
 
-            Screen.Run -> RunScreen(
-                seed = runSeed,
-                onExit = { screen = Screen.Menu },
-                onRestart = { runSeed = System.nanoTime() },
-                onRunEnd = { victory, floor ->
-                    records.record(floor, victory)
-                    if (floor > bestFloor) bestFloor = floor
-                    victories = records.victories
-                },
-            )
+            Screen.Run -> {
+                val current = run
+                if (current != null) {
+                    RunScreen(
+                        run = current,
+                        onExit = {
+                            screen = Screen.Menu
+                            hasSave = repository.hasSave()
+                        },
+                        onRestart = { startNewRun() },
+                        onRunEnd = { victory, floor ->
+                            records.record(floor, victory)
+                            if (floor > bestFloor) bestFloor = floor
+                            victories = records.victories
+                            repository.clear()
+                            hasSave = false
+                        },
+                        onPersist = { state ->
+                            if (state.phase != RunPhase.Victory && state.phase != RunPhase.Defeat) {
+                                repository.save(state)
+                                hasSave = true
+                            }
+                        },
+                    )
+                }
+            }
         }
 
         AnimatedVisibility(

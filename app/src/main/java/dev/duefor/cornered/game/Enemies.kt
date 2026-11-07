@@ -76,6 +76,12 @@ object EnemyPool {
         ),
     )
 
+    /** 按 id 找敌人：存档/读档用。 */
+    fun byId(id: String): EnemyDef? = allById[id]
+
+    private val allById: Map<String, EnemyDef> by lazy {
+        listOf(worm, guard, bandit, colossus, eye).associateBy { it.id }
+    }
     private val early = listOf(worm, bandit)
     private val normal = listOf(worm, guard, bandit)
 

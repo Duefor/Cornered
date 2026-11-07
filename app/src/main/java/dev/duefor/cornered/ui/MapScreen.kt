@@ -23,7 +23,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +66,8 @@ fun MapScreen(
     onEnter: (Int) -> Unit,
     onExit: () -> Unit,
 ) {
+    var showDeck by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -88,7 +93,12 @@ fun MapScreen(
                     color = InkMuted,
                 )
             }
-            TextButton(onClick = onExit) { Text("退出", fontSize = 12.sp, color = InkMuted) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { showDeck = true }) {
+                    Text("牌库 ${run.deck.size}", fontSize = 12.sp, color = AccentCyan)
+                }
+                TextButton(onClick = onExit) { Text("退出", fontSize = 12.sp, color = InkMuted) }
+            }
         }
 
         BoxWithConstraints(
@@ -161,6 +171,10 @@ fun MapScreen(
             }
         }
         Spacer(Modifier.height(4.dp))
+    }
+
+    if (showDeck) {
+        DeckOverlay(cards = run.deck.toList(), onClose = { showDeck = false })
     }
 }
 

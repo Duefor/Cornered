@@ -137,6 +137,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     testImplementation("junit:junit:4.13.2")
+    // 单元测试里用真实的 org.json 实现（android.jar 里的是空壳）
+    testImplementation("org.json:json:20231013")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

@@ -8,10 +8,12 @@ enum class RunPhase { Map, Combat, Reward, Rest, Treasure, Victory, Defeat }
 
 /**
  * 一局游戏的全部状态与流程：地图 -> 战斗 -> 奖励 -> 下一层。
- * 纯 Kotlin，界面只负责把 [phase] 画出来。
+ * 纯 Kotlin，界面只负责把 [phase] 画出来；存读档靠 [RunState.restore] 与快照。
  */
 class RunState(
     val rng: Random,
+    /** 地图是种子生成的，存档只存种子，读档时重新生成同一张图 */
+    val mapSeed: Long,
     val map: GameMap,
 ) {
     var maxHp: Int = START_HP
@@ -129,5 +131,44 @@ class RunState(
 
     companion object {
         const val START_HP = 80
+
+        fun newRun(seed: Long = System.nanoTime()): RunState = RunState(
+            rng = Random(seed),
+            mapSeed = seed,
+            map = MapGenerator.generate(Random(seed * 31 + 7)),
+        )
+
+        /** 读档：地图由 [mapSeed] 重建，其余字段从存档回填。 */
+        fun restore(
+            rng: Random,
+            mapSeed: Long,
+            map: GameMap,
+            hp: Int,
+            maxHp: Int,
+            gold: Int,
+            deck: List<Card>,
+            deepestFloor: Int,
+            currentNodeId: Int?,
+            reachable: Set<Int>,
+            phase: RunPhase,
+            combat: CombatEngine?,
+            rewardCards: List<Card>,
+            lastGoldGain: Int,
+        ): RunState {
+            val run = RunState(rng, mapSeed, map)
+            run.hp = hp.coerceIn(0, maxHp)
+            run.maxHp = maxHp
+            run.gold = gold
+            run.deck.clear()
+            run.deck.addAll(deck)
+            run.deepestFloor = deepestFloor
+            run.currentNodeId = currentNodeId
+            run.reachable = reachable
+            run.phase = phase
+            run.combat = combat
+            run.rewardCards = rewardCards
+            run.lastGoldGain = lastGoldGain
+            return run
+        }
     }
 }

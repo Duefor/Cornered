@@ -8,7 +8,7 @@ enum class CombatPhase { PlayerTurn, EnemyTurn, Victory, Defeat }
 
 class EnemyState(val def: EnemyDef, hp: Int) {
     var hp: Int = hp
-    val maxHp: Int = hp
+    var maxHp: Int = hp
     var block: Int = 0
     val statuses = mutableMapOf<Status, Int>()
     var moveIndex: Int = 0
@@ -19,20 +19,43 @@ class EnemyState(val def: EnemyDef, hp: Int) {
     fun statusOf(status: Status): Int = statuses[status] ?: 0
 }
 
+/** 战斗的完整快照，用于存档/读档。 */
+data class CombatSnapshot(
+    val hp: Int,
+    val maxHp: Int,
+    val block: Int,
+    val energy: Int,
+    val turn: Int,
+    val phase: CombatPhase,
+    val statuses: Map<Status, Int>,
+    val drawPile: List<Card>,
+    val hand: List<Card>,
+    val discardPile: List<Card>,
+    val exhaustPile: List<Card>,
+    val enemies: List<EnemySnapshot>,
+)
+
+data class EnemySnapshot(
+    val def: EnemyDef,
+    val hp: Int,
+    val maxHp: Int,
+    val block: Int,
+    val statuses: Map<Status, Int>,
+    val moveIndex: Int,
+)
+
 /**
  * 一回合制战斗的全部规则，纯 Kotlin、无 Android 依赖，可以直接单测。
  *
  * 回合流程：玩家出牌 -> 结束回合 -> 弃手牌/自身负面状态 -1 -> 敌人依次行动 -> 玩家回合开始
  * （格挡清零、能量回满、抽 5 张）。
  */
-class CombatEngine(
-    startHp: Int,
+class CombatEngine private constructor(
     val maxHp: Int,
-    deck: List<Card>,
     val enemies: List<EnemyState>,
     private val rng: Random,
 ) {
-    var hp: Int = startHp.coerceIn(0, maxHp)
+    var hp: Int = 0
         private set
     var block: Int = 0
         private set
@@ -51,7 +74,14 @@ class CombatEngine(
     val exhaustPile = mutableListOf<Card>()
     val log = mutableListOf<String>()
 
-    init {
+    constructor(
+        startHp: Int,
+        maxHp: Int,
+        deck: List<Card>,
+        enemies: List<EnemyState>,
+        rng: Random,
+    ) : this(maxHp, enemies, rng) {
+        hp = startHp.coerceIn(0, maxHp)
         drawPile.addAll(deck)
         drawPile.shuffle(rng)
         draw(HAND_SIZE)
@@ -121,6 +151,23 @@ class CombatEngine(
             vulnerable = hasStatus(Status.Vulnerable),
         )
     }
+
+    fun snapshot(): CombatSnapshot = CombatSnapshot(
+        hp = hp,
+        maxHp = maxHp,
+        block = block,
+        energy = energy,
+        turn = turn,
+        phase = phase,
+        statuses = statuses.toMap(),
+        drawPile = drawPile.toList(),
+        hand = hand.toList(),
+        discardPile = discardPile.toList(),
+        exhaustPile = exhaustPile.toList(),
+        enemies = enemies.map {
+            EnemySnapshot(it.def, it.hp, it.maxHp, it.block, it.statuses.toMap(), it.moveIndex)
+        },
+    )
 
     // ---------------------------------------------------------------- 内部
 
@@ -267,5 +314,29 @@ class CombatEngine(
         const val HAND_SIZE = 5
 
         private val DURATION_STATUSES = listOf(Status.Vulnerable, Status.Weak, Status.Frail)
+
+        /** 从存档快照重建一场战斗（不重新抽牌）。 */
+        fun restore(snapshot: CombatSnapshot, rng: Random): CombatEngine {
+            val enemies = snapshot.enemies.map { save ->
+                EnemyState(save.def, save.hp).apply {
+                    maxHp = save.maxHp
+                    block = save.block
+                    statuses.putAll(save.statuses)
+                    moveIndex = save.moveIndex
+                }
+            }
+            val engine = CombatEngine(snapshot.maxHp, enemies, rng)
+            engine.hp = snapshot.hp
+            engine.block = snapshot.block
+            engine.energy = snapshot.energy
+            engine.turn = snapshot.turn
+            engine.phase = snapshot.phase
+            engine.statuses.putAll(snapshot.statuses)
+            engine.drawPile.addAll(snapshot.drawPile)
+            engine.hand.addAll(snapshot.hand)
+            engine.discardPile.addAll(snapshot.discardPile)
+            engine.exhaustPile.addAll(snapshot.exhaustPile)
+            return engine
+        }
     }
 }

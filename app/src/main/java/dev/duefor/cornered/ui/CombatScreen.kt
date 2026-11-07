@@ -75,9 +75,8 @@ fun CombatScreen(
 
     val aliveEnemies = engine.aliveEnemies
     val selectedCard = selectedIndex?.let { engine.hand.getOrNull(it) }
-    val awaitingTarget = selectedCard != null &&
-        selectedCard.target == Target.Enemy &&
-        aliveEnemies.size > 1
+    // 单体卡即使只有一个敌人也要先选目标，和多个敌人时保持同一套操作
+    val awaitingTarget = selectedCard != null && selectedCard.target == Target.Enemy
 
     fun play(index: Int, target: Int) {
         engine.playCard(index, target)
@@ -88,7 +87,7 @@ fun CombatScreen(
     fun tapCard(index: Int) {
         val card = engine.hand.getOrNull(index) ?: return
         if (!engine.canPlay(index)) return
-        if (card.target == Target.Enemy && aliveEnemies.size > 1) {
+        if (card.target == Target.Enemy) {
             selectedIndex = if (selectedIndex == index) null else index
         } else {
             play(index, 0)

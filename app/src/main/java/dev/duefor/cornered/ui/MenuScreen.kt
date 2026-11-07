@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,8 +46,10 @@ import kotlin.math.max
 fun MenuScreen(
     bestFloor: Int,
     victories: Int,
+    hasSave: Boolean,
     version: String,
     checking: Boolean,
+    onContinue: () -> Unit,
     onPlay: () -> Unit,
     onCheckUpdate: () -> Unit,
 ) {
@@ -88,18 +92,46 @@ fun MenuScreen(
 
             Spacer(Modifier.height(36.dp))
 
-            Button(
-                onClick = onPlay,
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentCyan,
-                    contentColor = Color(0xFF06231F),
-                ),
-            ) {
-                Text("开始新一局", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            if (hasSave) {
+                Button(
+                    onClick = onContinue,
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentCyan,
+                        contentColor = Color(0xFF06231F),
+                    ),
+                ) {
+                    Text("继续游戏", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = onPlay,
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    border = BorderStroke(1.dp, AccentCyan.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink),
+                ) {
+                    Text("开始新一局", fontSize = 15.sp)
+                }
+            } else {
+                Button(
+                    onClick = onPlay,
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentCyan,
+                        contentColor = Color(0xFF06231F),
+                    ),
+                ) {
+                    Text("开始新一局", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(Modifier.height(10.dp))

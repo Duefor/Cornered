@@ -220,6 +220,12 @@ object CardPool {
         berserk, whirlwind, impervious,
     )
 
+    /** 按 id 找卡：存档/读档用。 */
+    fun byId(id: String): Card? = allById[id]
+
+    private val allById: Map<String, Card> by lazy {
+        (starterDeck + rewards).associateBy { it.id }
+    }
     /** 按稀有度权重抽 [count] 张不重复的卡作为战后奖励。 */
     fun rewardChoices(rng: Random, count: Int = 3): List<Card> {
         val pool = rewards.toMutableList()

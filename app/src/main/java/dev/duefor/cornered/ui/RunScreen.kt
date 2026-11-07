@@ -1,40 +1,42 @@
 package dev.duefor.cornered.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import dev.duefor.cornered.game.MapGenerator
 import dev.duefor.cornered.game.RunPhase
 import dev.duefor.cornered.game.RunState
-import kotlin.random.Random
 
 /**
  * 一局游戏的宿主：按 [RunPhase] 切换地图/战斗/奖励/营地/结算。
- * [seed] 变化即视为新的一局。
+ * 每次状态变化后回调 [onPersist]，退出时再存一次，保证「继续游戏」能从任意一步接上。
  */
 @Composable
 fun RunScreen(
-    seed: Long,
+    run: RunState,
     onExit: () -> Unit,
     onRestart: () -> Unit,
     onRunEnd: (Boolean, Int) -> Unit,
+    onPersist: (RunState) -> Unit,
 ) {
-    val run = remember(seed) {
-        RunState(
-            rng = Random(seed),
-            map = MapGenerator.generate(Random(seed * 31 + 7)),
-        )
-    }
-    var revision by remember(seed) { mutableIntStateOf(0) }
+    var revision by remember(run) { mutableIntStateOf(0) }
     val refresh: () -> Unit = { revision++ }
 
-    LaunchedEffect(seed, revision) {
-        if (run.phase == RunPhase.Victory || run.phase == RunPhase.Defeat) {
+    val finished = run.phase == RunPhase.Victory || run.phase == RunPhase.Defeat
+
+    LaunchedEffect(run, revision) {
+        if (finished) {
             onRunEnd(run.phase == RunPhase.Victory, run.deepestFloor)
+        } else {
+            onPersist(run)
         }
+    }
+
+    DisposableEffect(run) {
+        onDispose { if (!finished) onPersist(run) }
     }
 
     when (run.phase) {
