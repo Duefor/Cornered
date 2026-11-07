@@ -1,8 +1,8 @@
 # Cornered
 
-> 四面合围，别让角落吞掉你。
+> 一款爬塔式卡牌肉鸽（deckbuilder roguelike）：组牌、打怪、往上爬，别死在半路。
 
-一个用 **Kotlin + Jetpack Compose Canvas** 写的安卓小游戏：场地不断收缩，方块敌人从四周涌来，你只能拖动躲避、靠冲刺脱身。活得越久分越高。
+用 **Kotlin + Jetpack Compose** 手写，没有第三方游戏引擎：战斗规则是纯 Kotlin 的单机逻辑层，界面是 Compose 画出来的，构建与发版交给 GitHub Actions。
 
 [![Release](https://img.shields.io/github/v/release/Duefor/Cornered?label=latest&color=4DECC8)](https://github.com/Duefor/Cornered/releases/latest)
 [![Build](https://github.com/Duefor/Cornered/actions/workflows/ci.yml/badge.svg)](https://github.com/Duefor/Cornered/actions/workflows/ci.yml)
@@ -13,128 +13,178 @@
 
 **Cornered 是基于 DSH（DeepSeek Harness）开发的。**
 
-从工程骨架、游戏循环、更新模块到 CI 发版流水线，都是在 DSH 的会话里逐步搭起来并验证的：代码由 DSH 编写，构建与打包交给 GitHub Actions，版本通过 GitHub Release 分发。README、提交信息和发版说明也一并维护在仓库里，方便回看每次改动是怎么来的。
+工程骨架、战斗引擎、卡牌与敌人内容、Compose 界面、单元测试到 CI 发版流水线，都是在 DSH 的会话里逐步搭起来并本地编译验证的。版本通过 GitHub Release 分发，应用内可以直接拉取新版本。
 
 ## 玩法
 
-| 操作 | 效果 |
-| --- | --- |
-| 按住并拖动 | 朝拖动方向移动，幅度越大速度越快 |
-| 快速甩动（220ms 内） | 朝甩动方向冲刺，冷却 2.4 秒，右下角圆环是冷却进度 |
-| 目标 | 尽可能久地不被红色方块碰到 |
+一局 = 在 11 层的地图上往上爬，最后打首领「深渊之眼」。
 
-场地（青色边框）会随时间向内收缩，敌人从屏幕四周生成并向你靠拢、彼此还会互相挤开。分数 = 存活秒数，最高分存在本地。
+**地图节点**
+
+| 节点 | 说明 |
+| --- | --- |
+| 战斗 | 普通遭遇，打 1-2 个敌人 |
+| 精英 | 单个强敌，金币更多 |
+| 营地 | 二选一：回复 30% 生命，或最大生命 +5 |
+| 宝箱 | 白拿 25-50 金币 |
+| 首领 | 第 11 层的最终战 |
+
+每层有 2-4 条岔路，连线决定你下一步能去哪。
+
+**战斗规则**
+
+- 每回合 **3 点能量**、**抽 5 张牌**，打不完的牌回合结束进弃牌堆
+- 格挡在自己回合开始时清零，所以「这回合挡多少」是要算的
+- 敌人头顶会提前显示下回合意图：攻击 N / 防御 N / 加力量 / 给你上状态
+- 抽牌堆空了会自动把弃牌堆洗回去
+- 战斗胜利后：拿金币 + **三选一**加一张牌进牌组（也可以跳过）
+
+**状态效果**
+
+| 状态 | 效果 | 持续 |
+| --- | --- | --- |
+| 力量 | 攻击伤害 +N | 整场战斗 |
+| 敏捷 | 获得格挡 +N | 整场战斗 |
+| 易伤 | 受到的攻击伤害 +50% | 回合结束 -1 |
+| 虚弱 | 造成的攻击伤害 -25% | 回合结束 -1 |
+| 脆弱 | 获得的格挡 -25% | 回合结束 -1 |
+
+**卡牌**
+
+起始牌组 10 张：5× 打击、4× 防御、1× 重击。奖励池 15 张：
+
+| 卡 | 类型 | 费用 | 效果 |
+| --- | --- | --- | --- |
+| 打击 | 攻击 | 1 | 造成 6 点伤害 |
+| 防御 | 技能 | 1 | 获得 5 点格挡 |
+| 重击 | 攻击 | 2 | 8 点伤害 + 2 层易伤 |
+| 横扫 | 攻击 | 1 | 对全体造成 8 点伤害 |
+| 连击 | 攻击 | 1 | 5 点伤害两次 |
+| 铁壁 | 技能 | 2 | 获得 12 点格挡 |
+| 疾行 | 技能 | 1 | 抽 2 张牌 |
+| 护心 | 技能 | 1 | 8 点格挡 + 抽 1 张 |
+| 破甲 | 攻击 | 1 | 5 点伤害 + 3 层易伤 |
+| 恐吓 | 技能 | 1 | 全体施加 2 层虚弱 |
+| 蓄力 | 技能 | 0 | 获得 2 点力量 |
+| 重锤 | 攻击 | 2 | 造成 14 点伤害 |
+| 吸血打击 | 攻击 | 1 | 6 点伤害 + 回复 3 点生命 |
+| 战意 | 技能 | 0 | 抽 3 张牌（消耗） |
+| 蓄能 | 技能 | 0 | 获得 2 点能量（消耗） |
+| 狂暴 | 技能 | 1 | +3 力量，失去 4 点生命 |
+| 漩涡 | 攻击 | 2 | 对全体造成 5 点伤害三次 |
+| 不灭壁垒 | 技能 | 2 | 获得 24 点格挡（消耗） |
+
+**敌人**
+
+| 敌人 | 血量 | 特点 |
+| --- | --- | --- |
+| 腐蚀蠕虫 | 12-16 | 攻击与防御交替 |
+| 铁面守卫 | 18-22 | 连击、自己叠力量 |
+| 盗匪 | 14-18 | 高单发，会施加虚弱 |
+| 岩石巨像（精英） | 44-48 | 重击、格挡、叠力量 |
+| 深渊之眼（首领） | 85-95 | 五段循环，会给你上易伤 |
+
+## 已经做了 / 还没做
+
+**已实现**：地图生成与分支、完整战斗循环、18 张卡、5 种敌人、状态系统、战后三选一、营地、宝箱、胜负结算、跨局记录（最深楼层/通关次数）、应用内更新。
+
+**路线图**：卡牌升级（营地打铁）、遗物、药水、商店、随机事件、多幕（Act）、战斗中的卡牌拖拽、运行进度存档。
 
 ## 下载与安装
 
-到 [Releases](https://github.com/Duefor/Cornered/releases/latest) 下载 `Cornered-<版本>.apk`，手机上允许「安装未知来源应用」即可安装。
+到 [Releases](https://github.com/Duefor/Cornered/releases/latest) 下载 `Cornered-<版本>.apk`，手机上允许「安装未知来源应用」即可。需要 Android 8.0（API 26）及以上。
 
-> Android 8.0（API 26）及以上。
+## 应用内更新
 
-## 应用内更新（不用每次手动下载）
-
-游戏每次启动都会静默查一次 GitHub 最新正式版，发现新版本时弹出更新框；主菜单也有「检查更新」按钮手动触发。点「下载并安装」后：
+每次启动会静默查一次 GitHub 最新正式版，有新版本就弹窗；主菜单也有「检查更新」。点「下载并安装」后：
 
 1. 读 `https://api.github.com/repos/Duefor/Cornered/releases/latest`
-2. 用 `versionName` 与当前 `BuildConfig.VERSION_NAME` 比较（`v1.2.0` → `1.2.0` 逐段比数字）
-3. 从 Release 资产里挑第一个 `.apk` 下载到应用缓存目录，带进度回调
-4. 校验包名与 `versionCode` 后，交给系统 `PackageInstaller` 弹出安装确认
+2. 把 tag 的 `versionName` 和当前 `BuildConfig.VERSION_NAME` 逐段比数字
+3. 从 Release 资产里挑第一个 `.apk` 下载到缓存目录，带进度
+4. 校验包名与 `versionCode` 后交给系统 `PackageInstaller` 弹安装确认
 
-首次使用会要求「允许 Cornered 安装未知来源应用」，直接跳到系统授权页。
-
-**为什么能覆盖安装？** 必须满足两条：包名相同（都是 `dev.duefor.cornered`）、**签名相同**。所以发布签名一旦定下来就不能换，见下面的[签名配置](#一次性配置发布签名)。
+覆盖安装的前提是**包名相同 + 签名相同**，所以发布签名一旦定下来就不能换。
 
 ## 仓库结构
 
 ```
-.
-├── app/src/main/java/dev/duefor/cornered/
-│   ├── MainActivity.kt          应用入口、主页/游戏页切换、提示条
-│   ├── game/GameEngine.kt       纯逻辑：收缩场地、敌人生成与追踪、冲刺、碰撞
-│   ├── ui/GameScreen.kt         Canvas 渲染 + 手势（拖动/甩动）+ HUD
-│   ├── ui/MenuScreen.kt         主菜单
-│   ├── update/                  GitHub Release 检查、下载、PackageInstaller 安装
-│   └── data/ScoreStore.kt       最高分
-├── .github/workflows/
-│   ├── release.yml              打 v* 标签 -> 构建签名 APK -> 发布 Release
-│   └── ci.yml                   推 main / PR 时编译 debug 包
-├── scripts/
-│   ├── setup-toolchain.ps1      在仓库内装一份可删除的 JDK + Android SDK
-│   └── new-keystore.ps1         生成发布签名并输出 GitHub Secrets 需要的 base64
-└── docs/RELEASING.md            发版与签名的完整清单
+app/src/main/java/dev/duefor/cornered/
+├── MainActivity.kt              入口：主页 / 对局切换、更新提示
+├── game/                        ← 纯 Kotlin，不依赖 Android，可直接单测
+│   ├── Model.kt                 卡牌、效果、状态、敌人意图等基础类型
+│   ├── Cards.kt                 卡池与起始牌组
+│   ├── Enemies.kt               敌人模板与按层数遭遇表
+│   ├── CombatEngine.kt          战斗规则：抽牌/能量/格挡/伤害结算/敌人回合
+│   ├── GameMap.kt               地图节点与分叉生成
+│   └── RunState.kt              一局的流程状态机
+├── ui/                          ← Compose 界面
+│   ├── MenuScreen.kt            主页
+│   ├── MapScreen.kt             Canvas 画的地图 + 点击选路
+│   ├── CombatScreen.kt          战斗：敌我状态、意图、手牌、结束回合
+│   ├── CardView.kt              卡面组件
+│   ├── RewardScreen.kt          三选一 / 宝箱
+│   ├── RestScreen.kt            营地
+│   ├── EndScreen.kt             胜负结算
+│   └── RunScreen.kt             按阶段切换上面这些界面
+├── update/                      GitHub Release 检查、下载、安装
+└── data/RunRecords.kt           跨局记录
+
+app/src/test/java/...            战斗与地图的单元测试（20 个）
 ```
 
-游戏逻辑（`GameEngine`）不依赖任何 Android API，尺寸全部按 dp 书写再按屏幕密度换算，所以不同分辨率的手机手感一致，也方便以后加测试。
+设计上刻意把**规则**和**表现**分开：`game/` 里没有一个 import 是 `android.*` 或 `androidx.*` 的，加新卡、新敌人、新状态都只动数据层；界面只读状态、发指令。
 
 ## 本地开发
 
-需要 JDK 17 和 Android SDK Platform 35。用 Android Studio 直接打开仓库即可。
+需要 JDK 17 和 Android SDK Platform 35。用 Android Studio 直接打开即可。
 
-纯粹的 Windows 命令行环境可以用脚本在仓库内准备一套工具链（装在 `.toolchain/`，已 gitignore，删掉目录就完全回滚，不动系统环境变量）：
+纯命令行环境可以用脚本在仓库内装一套可删除的工具链（装在 `.toolchain/`，已 gitignore，删目录即完全回滚；默认走国内镜像，失败回退官方源）：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-toolchain.ps1
 $env:JAVA_HOME = "$PWD\.toolchain\jdk"
-$env:Path = "$PWD\.toolchain\jdk\bin;$env:Path"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
 ./gradlew :app:assembleDebug
 ```
 
-产物在 `app/build/outputs/apk/debug/`。
-
-跑单元测试（版本比较逻辑）：
+跑测试：
 
 ```powershell
 ./gradlew :app:testDebugUnitTest
 ```
+
+产物在 `app/build/outputs/apk/debug/`。
 
 ## 发版流程
 
 版本号由 **git 标签**决定，不在代码里手改：标签 `v1.2.3` → `versionName=1.2.3`、`versionCode=10203`（主×10000 + 次×100 + 修订）。
 
 ```powershell
-# 1. 改完代码，正常提交
 git add -A
-git commit -m "feat: 新增 xxx"
-
-# 2. 打标签并推送（推标签就会触发 Release 工作流）
-git tag v1.0.1
+git commit -m "feat: 新增遗物系统"
 git push origin main
+
+git tag v1.0.1
 git push origin v1.0.1
 ```
 
-Actions 跑完后会自动：构建 release APK → 上传构建产物 → 创建 `v1.0.1` 的 Release（正文带版本号与签名来源）→ 挂上 `Cornered-1.0.1.apk`。已装旧版的手机打开游戏就能收到更新提示。
-
-细节和排错见 [docs/RELEASING.md](docs/RELEASING.md)。
+Actions 会自动构建签名 APK、创建 Release、挂上 `Cornered-1.0.1.apk`，游戏内随即能收到更新。细节见 [docs/RELEASING.md](docs/RELEASING.md)。
 
 ## 一次性配置：发布签名
 
-**必须在第一次发版前做完，之后不能换。** debug 签名每次构建都不一样，用它发布的包无法覆盖安装，应用内更新会一直失败。
+**必须在第一次发版前做完，之后不能换。**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/new-keystore.ps1
 ```
 
-脚本会生成 `release.jks`、写入本地 `keystore.properties`（两者都在 gitignore 里），并打印出需要填进 GitHub Secrets 的四项：
-
-| Secret | 内容 |
-| --- | --- |
-| `KEYSTORE_BASE64` | `release.jks` 的 base64 整行文本 |
-| `KEYSTORE_PASSWORD` | keystore 口令 |
-| `KEY_ALIAS` | 密钥别名（默认 `cornered`） |
-| `KEY_PASSWORD` | 密钥口令 |
-
-到 `Settings → Secrets and variables → Actions` 里逐个添加。**`release.jks` 请离线备份**，丢了就再也无法给已安装的用户推送更新，只能换包名重新上架。
+生成 `release.jks` 与本地 `keystore.properties`（都在 gitignore 里），并打印要填进 GitHub Secrets 的四项：`KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD`。**`release.jks` 请离线备份**，丢了就再也无法给已安装的用户推更新。
 
 ## 常见问题
 
-**更新提示下载完却装不上？**
-签名不一致（换过 keystore）或 `versionCode` 没有递增。覆盖安装两个条件缺一不可。
+**更新下载完装不上？** 签名不一致或 `versionCode` 没递增，两个条件缺一不可。
 
-**Release 构建用了 debug 签名？**
-Actions 日志里会有一行 `::warning::仓库没有配置 KEYSTORE_BASE64`。补齐 Secrets 后重新跑一次工作流。
-
-**API 限流？**
-未登录的 GitHub API 每小时 60 次，只查 `releases/latest` 完全够用。
+**Release 用了 debug 签名？** Actions 日志里有 `::warning::仓库没有配置 KEYSTORE_BASE64`，补齐 Secrets 后重跑。
 
 ## 许可
 

@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,9 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import dev.duefor.cornered.data.ScoreStore
-import dev.duefor.cornered.ui.GameScreen
+import dev.duefor.cornered.data.RunRecords
 import dev.duefor.cornered.ui.MenuScreen
+import dev.duefor.cornered.ui.RunScreen
 import dev.duefor.cornered.ui.theme.ArenaBackground
 import dev.duefor.cornered.ui.theme.ArenaSurface
 import dev.duefor.cornered.ui.theme.CorneredTheme
@@ -52,24 +53,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private enum class Screen { Menu, Run }
+
 @Composable
 private fun CorneredApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val scoreStore = remember { ScoreStore(context.applicationContext) }
+    val records = remember { RunRecords(context.applicationContext) }
     val updater = remember { UpdateController(context.applicationContext) }
 
-    var best by remember { mutableIntStateOf(scoreStore.best) }
-    var playing by remember { mutableStateOf(false) }
+    var screen by remember { mutableStateOf(Screen.Menu) }
+    var runSeed by remember { mutableLongStateOf(0L) }
+    var bestFloor by remember { mutableIntStateOf(records.bestFloor) }
+    var victories by remember { mutableIntStateOf(records.victories) }
     var showUpdate by remember { mutableStateOf(false) }
 
-    // 启动时静默检查一次；有新版才弹窗，绝不打扰正常玩。
+    // 启动时静默检查一次；有新版才弹窗
     LaunchedEffect(Unit) {
         updater.check(silent = true)
         if (updater.release != null) showUpdate = true
     }
 
-    // 提示条 3.5 秒后自动消失
     LaunchedEffect(updater.message) {
         val current = updater.message ?: return@LaunchedEffect
         delay(3500)
@@ -81,28 +85,32 @@ private fun CorneredApp() {
             .fillMaxSize()
             .background(ArenaBackground),
     ) {
-        if (playing) {
-            GameScreen(
-                best = best,
-                onExit = { playing = false },
-                onGameOver = { seconds ->
-                    if (seconds > best) {
-                        best = seconds
-                        scoreStore.best = seconds
-                    }
-                },
-            )
-        } else {
-            MenuScreen(
-                best = best,
+        when (screen) {
+            Screen.Menu -> MenuScreen(
+                bestFloor = bestFloor,
+                victories = victories,
                 version = BuildConfig.VERSION_NAME,
                 checking = updater.checking,
-                onPlay = { playing = true },
+                onPlay = {
+                    runSeed = System.nanoTime()
+                    screen = Screen.Run
+                },
                 onCheckUpdate = {
                     scope.launch {
                         updater.check(silent = false)
                         if (updater.release != null) showUpdate = true
                     }
+                },
+            )
+
+            Screen.Run -> RunScreen(
+                seed = runSeed,
+                onExit = { screen = Screen.Menu },
+                onRestart = { runSeed = System.nanoTime() },
+                onRunEnd = { victory, floor ->
+                    records.record(floor, victory)
+                    if (floor > bestFloor) bestFloor = floor
+                    victories = records.victories
                 },
             )
         }

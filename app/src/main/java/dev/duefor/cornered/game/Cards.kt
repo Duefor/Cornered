@@ -1,0 +1,243 @@
+package dev.duefor.cornered.game
+
+import kotlin.random.Random
+
+/**
+ * 卡池。所有卡都是纯数据，加新卡只需要在 [rewards] 里加一条。
+ * 卡面描述写死成文字，先保证可读；数值改动时记得同步 description。
+ */
+object CardPool {
+
+    // ---------------------------------------------------------------- 起始牌组
+    val strike = Card(
+        id = "strike",
+        name = "打击",
+        cost = 1,
+        type = CardType.Attack,
+        rarity = Rarity.Common,
+        target = Target.Enemy,
+        description = "造成 6 点伤害。",
+        effects = listOf(Effect.Damage(6)),
+    )
+
+    val defend = Card(
+        id = "defend",
+        name = "防御",
+        cost = 1,
+        type = CardType.Skill,
+        rarity = Rarity.Common,
+        target = Target.Self,
+        description = "获得 5 点格挡。",
+        effects = listOf(Effect.Block(5)),
+    )
+
+    val bash = Card(
+        id = "bash",
+        name = "重击",
+        cost = 2,
+        type = CardType.Attack,
+        rarity = Rarity.Common,
+        target = Target.Enemy,
+        description = "造成 8 点伤害，施加 2 层易伤。",
+        effects = listOf(Effect.Damage(8), Effect.Apply(Status.Vulnerable, 2)),
+    )
+
+    // ---------------------------------------------------------------- 奖励池
+    val cleave = Card(
+        id = "cleave",
+        name = "横扫",
+        cost = 1,
+        type = CardType.Attack,
+        rarity = Rarity.Common,
+        target = Target.AllEnemies,
+        description = "对所有敌人造成 8 点伤害。",
+        effects = listOf(Effect.Damage(8, target = Target.AllEnemies)),
+    )
+
+    val twinStrike = Card(
+        id = "twin_strike",
+        name = "连击",
+        cost = 1,
+        type = CardType.Attack,
+        rarity = Rarity.Common,
+        target = Target.Enemy,
+        description = "造成 5 点伤害两次。",
+        effects = listOf(Effect.Damage(5, times = 2)),
+    )
+
+    val ironWall = Card(
+        id = "iron_wall",
+        name = "铁壁",
+        cost = 2,
+        type = CardType.Skill,
+        rarity = Rarity.Common,
+        target = Target.Self,
+        description = "获得 12 点格挡。",
+        effects = listOf(Effect.Block(12)),
+    )
+
+    val quickStep = Card(
+        id = "quick_step",
+        name = "疾行",
+        cost = 1,
+        type = CardType.Skill,
+        rarity = Rarity.Common,
+        target = Target.Self,
+        description = "抽 2 张牌。",
+        effects = listOf(Effect.Draw(2)),
+    )
+
+    val guard = Card(
+        id = "guard",
+        name = "护心",
+        cost = 1,
+        type = CardType.Skill,
+        rarity = Rarity.Common,
+        target = Target.Self,
+        description = "获得 8 点格挡，抽 1 张牌。",
+        effects = listOf(Effect.Block(8), Effect.Draw(1)),
+    )
+
+    val rend = Card(
+        id = "rend",
+        name = "破甲",
+        cost = 1,
+        type = CardType.Attack,
+        rarity = Rarity.Uncommon,
+        target = Target.Enemy,
+        description = "造成 5 点伤害，施加 3 层易伤。",
+        effects = listOf(Effect.Damage(5), Effect.Apply(Status.Vulnerable, 3)),
+    )
+
+    val intimidate = Card(
+        id = "intimidate",
+        name = "恐吓",
+        cost = 1,
+        type = CardType.Skill,
+        rarity = Rarity.Uncommon,
+        target = Target.AllEnemies,
+        description = "对所有敌人施加 2 层虚弱。",
+        effects = listOf(Effect.Apply(Status.Weak, 2, Target.AllEnemies)),
+    )
+
+    val flex = Card(
+        id = "flex",
+        name = "蓄力",
+        cost = 0,
+        type = CardType.Skill,
+        rarity = Rarity.Uncommon,
+        target = Target.Self,
+        description = "获得 2 点力量。",
+        effects = listOf(Effect.Apply(Status.Strength, 2, Target.Self)),
+    )
+
+    val heavyBlow = Card(
+        id = "heavy_blow",
+        name = "重锤",
+        cost = 2,
+        type = CardType.Attack,
+        rarity = Rarity.Uncommon,
+        target = Target.Enemy,
+        description = "造成 14 点伤害。",
+        effects = listOf(Effect.Damage(14)),
+    )
+
+    val lifesteal = Card(
+        id = "lifesteal",
+        name = "吸血打击",
+        cost = 1,
+        type = CardType.Attack,
+        rarity = Rarity.Uncommon,
+        target = Target.Enemy,
+        description = "造成 6 点伤害，回复 3 点生命。",
+        effects = listOf(Effect.Damage(6), Effect.Heal(3)),
+    )
+
+    val battleTrance = Card(
+        id = "battle_trance",
+        name = "战意",
+        cost = 0,
+        type = CardType.Skill,
+        rarity = Rarity.Uncommon,
+        target = Target.Self,
+        description = "抽 3 张牌。消耗。",
+        effects = listOf(Effect.Draw(3)),
+        exhaust = true,
+    )
+
+    val recharge = Card(
+        id = "recharge",
+        name = "蓄能",
+        cost = 0,
+        type = CardType.Skill,
+        rarity = Rarity.Uncommon,
+        target = Target.Self,
+        description = "获得 2 点能量。消耗。",
+        effects = listOf(Effect.Energy(2)),
+        exhaust = true,
+    )
+
+    val berserk = Card(
+        id = "berserk",
+        name = "狂暴",
+        cost = 1,
+        type = CardType.Skill,
+        rarity = Rarity.Rare,
+        target = Target.Self,
+        description = "获得 3 点力量，失去 4 点生命。",
+        effects = listOf(Effect.Apply(Status.Strength, 3, Target.Self), Effect.SelfDamage(4)),
+    )
+
+    val whirlwind = Card(
+        id = "whirlwind",
+        name = "漩涡",
+        cost = 2,
+        type = CardType.Attack,
+        rarity = Rarity.Rare,
+        target = Target.AllEnemies,
+        description = "对所有敌人造成 5 点伤害三次。",
+        effects = listOf(Effect.Damage(5, times = 3, target = Target.AllEnemies)),
+    )
+
+    val impervious = Card(
+        id = "impervious",
+        name = "不灭壁垒",
+        cost = 2,
+        type = CardType.Skill,
+        rarity = Rarity.Rare,
+        target = Target.Self,
+        description = "获得 24 点格挡。消耗。",
+        effects = listOf(Effect.Block(24)),
+        exhaust = true,
+    )
+
+    val starterDeck: List<Card> =
+        List(5) { strike } + List(4) { defend } + listOf(bash)
+
+    val rewards: List<Card> = listOf(
+        cleave, twinStrike, ironWall, quickStep, guard,
+        rend, intimidate, flex, heavyBlow, lifesteal, battleTrance, recharge,
+        berserk, whirlwind, impervious,
+    )
+
+    /** 按稀有度权重抽 [count] 张不重复的卡作为战后奖励。 */
+    fun rewardChoices(rng: Random, count: Int = 3): List<Card> {
+        val pool = rewards.toMutableList()
+        val picked = mutableListOf<Card>()
+        repeat(count.coerceAtMost(pool.size)) {
+            val totalWeight = pool.sumOf { it.rarity.weight }
+            var roll = rng.nextInt(totalWeight)
+            var chosen = pool.first()
+            for (card in pool) {
+                roll -= card.rarity.weight
+                if (roll < 0) {
+                    chosen = card
+                    break
+                }
+            }
+            picked += chosen
+            pool.remove(chosen)
+        }
+        return picked
+    }
+}

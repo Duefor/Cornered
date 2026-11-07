@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -31,12 +30,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.duefor.cornered.ui.theme.AccentCyan
-import dev.duefor.cornered.ui.theme.AccentRed
 import dev.duefor.cornered.ui.theme.ArenaBackground
 import dev.duefor.cornered.ui.theme.Ink
 import dev.duefor.cornered.ui.theme.InkMuted
@@ -44,7 +42,8 @@ import kotlin.math.max
 
 @Composable
 fun MenuScreen(
-    best: Int,
+    bestFloor: Int,
+    victories: Int,
     version: String,
     checking: Boolean,
     onPlay: () -> Unit,
@@ -67,34 +66,27 @@ fun MenuScreen(
         ) {
             Text(
                 text = "CORNERED",
-                fontSize = 40.sp,
+                fontSize = 38.sp,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 9.sp,
+                letterSpacing = 8.sp,
                 color = Ink,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
-                text = "四面合围，别让角落吞掉你",
+                text = "构筑牌组，一层层爬上去",
                 style = MaterialTheme.typography.bodyMedium,
                 color = InkMuted,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(Modifier.height(44.dp))
-
-            Text(
-                text = "历史最高",
-                style = MaterialTheme.typography.labelMedium,
-                color = InkMuted,
-            )
-            Text(
-                text = "$best 秒",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentCyan,
             )
 
             Spacer(Modifier.height(40.dp))
+
+            Text(
+                text = "最深 $bestFloor 层" + if (victories > 0) " · 通关 $victories 次" else "",
+                fontSize = 13.sp,
+                color = AccentCyan,
+            )
+
+            Spacer(Modifier.height(36.dp))
 
             Button(
                 onClick = onPlay,
@@ -107,7 +99,7 @@ fun MenuScreen(
                     contentColor = Color(0xFF06231F),
                 ),
             ) {
-                Text("开始游戏", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("开始新一局", fontSize = 17.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.height(10.dp))
@@ -125,19 +117,13 @@ fun MenuScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
-                .padding(bottom = 18.dp),
+                .padding(bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "拖动躲避 · 快速甩动冲刺 · 场地会越来越小",
-                style = MaterialTheme.typography.labelSmall,
-                color = InkMuted.copy(alpha = 0.7f),
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
                 text = "v$version",
                 style = MaterialTheme.typography.labelSmall,
-                color = InkMuted.copy(alpha = 0.5f),
+                color = InkMuted.copy(alpha = 0.55f),
             )
         }
     }
@@ -150,63 +136,43 @@ private fun DrawScope.drawBackdrop() {
     drawRect(
         brush = Brush.radialGradient(
             colors = listOf(Color(0xFF12202B), Color(0xFF070A0E)),
-            center = Offset(w * 0.5f, h * 0.4f),
-            radius = max(w, h) * 0.9f,
+            center = Offset(w * 0.5f, h * 0.35f),
+            radius = max(w, h) * 0.95f,
         ),
     )
 
-    val step = 48f * density
+    val step = 46f * density
     var y = step
     while (y < h) {
         var x = step
         while (x < w) {
-            drawCircle(Color(0xFF1A2733), radius = 1.3f * density, center = Offset(x, y))
+            drawCircle(Color(0xFF1A2733), radius = 1.2f * density, center = Offset(x, y))
             x += step
         }
         y += step
     }
 
-    // 右侧收拢的角落
-    val inset = minOf(w, h) * 0.1f
-    val corner = CornerRadius(24f * density)
-    drawRoundRect(
-        color = Color(0x334DECC8),
-        topLeft = Offset(inset, inset),
-        size = Size(w - inset * 2f, h - inset * 2f),
-        cornerRadius = corner,
-        style = Stroke(width = 2f * density),
-    )
-
-    val arm = 34f * density
-    val color = AccentCyan.copy(alpha = 0.75f)
-    val sw = 5f * density
-    drawLine(color, Offset(inset, inset + arm), Offset(inset, inset), sw)
-    drawLine(color, Offset(inset, inset), Offset(inset + arm, inset), sw)
-    drawLine(color, Offset(w - inset - arm, h - inset), Offset(w - inset, h - inset), sw)
-    drawLine(color, Offset(w - inset, h - inset), Offset(w - inset, h - inset - arm), sw)
-
-    // 几个游荡的方块，纯装饰
-    val half = 13f * density
-    val spots = listOf(
-        Offset(w * 0.2f, h * 0.24f),
-        Offset(w * 0.82f, h * 0.3f),
-        Offset(w * 0.15f, h * 0.74f),
-        Offset(w * 0.78f, h * 0.8f),
-    )
-    spots.forEachIndexed { index, point ->
-        val radius = if (index % 2 == 0) half else half * 0.8f
-        drawRoundRect(
-            color = AccentRed.copy(alpha = 0.18f),
-            topLeft = Offset(point.x - radius, point.y - radius),
-            size = Size(radius * 2f, radius * 2f),
-            cornerRadius = CornerRadius(radius * 0.34f),
-        )
-        drawRoundRect(
-            color = AccentRed.copy(alpha = 0.45f),
-            topLeft = Offset(point.x - radius, point.y - radius),
-            size = Size(radius * 2f, radius * 2f),
-            cornerRadius = CornerRadius(radius * 0.34f),
-            style = Stroke(width = 1.5f * density),
-        )
+    // 三张散落的牌，纯装饰
+    val cardW = 62f * density
+    val cardH = 88f * density
+    val center = Offset(w * 0.5f, h * 0.74f)
+    val angles = listOf(-18f, 0f, 18f)
+    angles.forEachIndexed { index, angle ->
+        rotate(degrees = angle, pivot = center) {
+            val offsetX = (index - 1) * 34f * density
+            drawRoundRect(
+                color = Color(0xFF16212B),
+                topLeft = Offset(center.x - cardW / 2f + offsetX, center.y - cardH / 2f),
+                size = Size(cardW, cardH),
+                cornerRadius = CornerRadius(8f * density),
+            )
+            drawRoundRect(
+                color = AccentCyan.copy(alpha = 0.28f),
+                topLeft = Offset(center.x - cardW / 2f + offsetX, center.y - cardH / 2f),
+                size = Size(cardW, cardH),
+                cornerRadius = CornerRadius(8f * density),
+                style = Stroke(width = 1.5f * density),
+            )
+        }
     }
 }
