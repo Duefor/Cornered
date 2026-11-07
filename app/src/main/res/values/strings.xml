@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cornered</string>
+    <string name="unknown_sources_hint">请先允许 Cornered 安装未知来源的应用，然后回到游戏重试。</string>
+</resources>

@@ -1,0 +1,31 @@
+# Gradle / Android
+.gradle/
+build/
+.kotlin/
+local.properties
+captures/
+.cxx/
+*.hprof
+
+# 本机工具链（scripts/setup-toolchain.ps1 生成，可整目录删除）
+.toolchain/
+
+# 签名材料：绝不入库
+keystore.properties
+*.jks
+*.keystore
+*.p12
+release-keystore.json
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# 输出
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json

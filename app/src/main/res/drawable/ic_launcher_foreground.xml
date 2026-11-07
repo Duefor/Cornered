@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 角落支架 -->
+    <path
+        android:fillColor="#4DECC8"
+        android:pathData="M30,26 h10 v48 h44 v10 h-54 z" />
+
+    <!-- 被逼到角落的点 -->
+    <path
+        android:fillColor="#FF6B6B"
+        android:pathData="M62,40 a10,10 0 1,0 0,20 a10,10 0 1,0 0,-20 z" />
+</vector>

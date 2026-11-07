@@ -1,0 +1,12 @@
+# 统一换行符，避免 Windows 上把 gradlew 提交成 CRLF 导致 Linux CI 跑不起来
+* text=auto
+*.sh text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.jar binary
+*.jks binary
+*.keystore binary
+*.apk binary
+*.png binary
