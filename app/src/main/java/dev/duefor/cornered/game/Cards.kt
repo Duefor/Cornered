@@ -16,7 +16,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Common,
         target = Target.Enemy,
-        description = "造成 6 点伤害。",
+        description = "6 点伤害",
         effects = listOf(Effect.Damage(6)),
     )
 
@@ -27,7 +27,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Common,
         target = Target.Self,
-        description = "获得 5 点格挡。",
+        description = "5 点格挡",
         effects = listOf(Effect.Block(5)),
     )
 
@@ -38,7 +38,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Common,
         target = Target.Enemy,
-        description = "造成 8 点伤害，施加 2 层易伤。",
+        description = "8 伤害 + 2 易伤",
         effects = listOf(Effect.Damage(8), Effect.Apply(Status.Vulnerable, 2)),
     )
 
@@ -50,7 +50,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Common,
         target = Target.AllEnemies,
-        description = "对所有敌人造成 8 点伤害。",
+        description = "全体 8 伤害",
         effects = listOf(Effect.Damage(8, target = Target.AllEnemies)),
     )
 
@@ -61,7 +61,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Common,
         target = Target.Enemy,
-        description = "造成 5 点伤害两次。",
+        description = "5 伤害 ×2",
         effects = listOf(Effect.Damage(5, times = 2)),
     )
 
@@ -72,7 +72,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Common,
         target = Target.Self,
-        description = "获得 12 点格挡。",
+        description = "12 点格挡",
         effects = listOf(Effect.Block(12)),
     )
 
@@ -83,7 +83,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Common,
         target = Target.Self,
-        description = "抽 2 张牌。",
+        description = "抽 2 张",
         effects = listOf(Effect.Draw(2)),
     )
 
@@ -94,7 +94,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Common,
         target = Target.Self,
-        description = "获得 8 点格挡，抽 1 张牌。",
+        description = "8 格挡 + 抽 1",
         effects = listOf(Effect.Block(8), Effect.Draw(1)),
     )
 
@@ -105,7 +105,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Uncommon,
         target = Target.Enemy,
-        description = "造成 5 点伤害，施加 3 层易伤。",
+        description = "5 伤害 + 3 易伤",
         effects = listOf(Effect.Damage(5), Effect.Apply(Status.Vulnerable, 3)),
     )
 
@@ -116,7 +116,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Uncommon,
         target = Target.AllEnemies,
-        description = "对所有敌人施加 2 层虚弱。",
+        description = "全体 2 虚弱",
         effects = listOf(Effect.Apply(Status.Weak, 2, Target.AllEnemies)),
     )
 
@@ -127,7 +127,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Uncommon,
         target = Target.Self,
-        description = "获得 2 点力量。",
+        description = "+2 力量",
         effects = listOf(Effect.Apply(Status.Strength, 2, Target.Self)),
     )
 
@@ -138,7 +138,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Uncommon,
         target = Target.Enemy,
-        description = "造成 14 点伤害。",
+        description = "14 点伤害",
         effects = listOf(Effect.Damage(14)),
     )
 
@@ -149,7 +149,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Uncommon,
         target = Target.Enemy,
-        description = "造成 6 点伤害，回复 3 点生命。",
+        description = "6 伤害 + 回 3",
         effects = listOf(Effect.Damage(6), Effect.Heal(3)),
     )
 
@@ -160,7 +160,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Uncommon,
         target = Target.Self,
-        description = "抽 3 张牌。消耗。",
+        description = "抽 3 张 · 消耗",
         effects = listOf(Effect.Draw(3)),
         exhaust = true,
     )
@@ -172,7 +172,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Uncommon,
         target = Target.Self,
-        description = "获得 2 点能量。消耗。",
+        description = "+2 能量 · 消耗",
         effects = listOf(Effect.Energy(2)),
         exhaust = true,
     )
@@ -184,7 +184,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Rare,
         target = Target.Self,
-        description = "获得 3 点力量，失去 4 点生命。",
+        description = "+3 力量 · -4 生命",
         effects = listOf(Effect.Apply(Status.Strength, 3, Target.Self), Effect.SelfDamage(4)),
     )
 
@@ -195,7 +195,7 @@ object CardPool {
         type = CardType.Attack,
         rarity = Rarity.Rare,
         target = Target.AllEnemies,
-        description = "对所有敌人造成 5 点伤害三次。",
+        description = "全体 5 伤害 ×3",
         effects = listOf(Effect.Damage(5, times = 3, target = Target.AllEnemies)),
     )
 
@@ -206,7 +206,7 @@ object CardPool {
         type = CardType.Skill,
         rarity = Rarity.Rare,
         target = Target.Self,
-        description = "获得 24 点格挡。消耗。",
+        description = "24 格挡 · 消耗",
         effects = listOf(Effect.Block(24)),
         exhaust = true,
     )

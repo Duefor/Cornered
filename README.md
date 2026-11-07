@@ -155,6 +155,19 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 
 产物在 `app/build/outputs/apk/debug/`。
 
+### 在模拟器里跑
+
+模拟器需要硬件加速。Windows 上装 Google 的 AEHD 驱动（`sdkmanager "extras;google;Android_Emulator_Hypervisor_Driver"`，再以管理员运行其中的 `silent_install.bat`），macOS/Linux 用系统自带虚拟化。装好后：
+
+```powershell
+emulator -avd <你的AVD名> -no-window -gpu swiftshader_indirect
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell am start -n dev.duefor.cornered.debug/dev.duefor.cornered.MainActivity
+adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png
+```
+
+调试包的应用 ID 带 `.debug` 后缀，和正式包可以同时安装。
+
 ## 发版流程
 
 版本号由 **git 标签**决定，不在代码里手改：标签 `v1.2.3` → `versionName=1.2.3`、`versionCode=10203`（主×10000 + 次×100 + 修订）。

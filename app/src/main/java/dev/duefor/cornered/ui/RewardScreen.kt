@@ -130,7 +130,8 @@ fun RestScreen(
 
         RestOption(
             title = "休息",
-            detail = "回复 30% 最大生命",
+            detail = if (run.hp < run.maxHp) "回复 30% 最大生命" else "生命已满",
+            enabled = run.hp < run.maxHp,
             onClick = onRest,
         )
         Spacer(Modifier.height(14.dp))
@@ -143,9 +144,10 @@ fun RestScreen(
 }
 
 @Composable
-private fun RestOption(title: String, detail: String, onClick: () -> Unit) {
+private fun RestOption(title: String, detail: String, enabled: Boolean = true, onClick: () -> Unit) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp),
@@ -157,7 +159,7 @@ private fun RestOption(title: String, detail: String, onClick: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            Text(detail, fontSize = 11.sp, color = InkMuted)
+            Text(detail, fontSize = 11.sp, color = InkMuted.copy(alpha = if (enabled) 1f else 0.5f))
         }
     }
 }

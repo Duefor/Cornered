@@ -29,3 +29,6 @@ release-keystore.json
 *.ap_
 *.dex
 output-metadata.json
+
+# 模拟器截图（本地保留，不入库）
+screenshots/

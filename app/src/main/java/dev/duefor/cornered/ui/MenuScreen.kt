@@ -152,27 +152,26 @@ private fun DrawScope.drawBackdrop() {
         y += step
     }
 
-    // 三张散落的牌，纯装饰
-    val cardW = 62f * density
-    val cardH = 88f * density
-    val center = Offset(w * 0.5f, h * 0.74f)
-    val angles = listOf(-18f, 0f, 18f)
-    angles.forEachIndexed { index, angle ->
-        rotate(degrees = angle, pivot = center) {
-            val offsetX = (index - 1) * 34f * density
-            drawRoundRect(
-                color = Color(0xFF16212B),
-                topLeft = Offset(center.x - cardW / 2f + offsetX, center.y - cardH / 2f),
-                size = Size(cardW, cardH),
-                cornerRadius = CornerRadius(8f * density),
-            )
-            drawRoundRect(
-                color = AccentCyan.copy(alpha = 0.28f),
-                topLeft = Offset(center.x - cardW / 2f + offsetX, center.y - cardH / 2f),
-                size = Size(cardW, cardH),
-                cornerRadius = CornerRadius(8f * density),
-                style = Stroke(width = 1.5f * density),
-            )
-        }
-    }
+    // 四角支架，呼应应用图标；放在边缘，不会压到任何控件
+    val m = 24f * density
+    val arm = 26f * density
+    val bracket = AccentCyan.copy(alpha = 0.18f)
+    val sw = 2f * density
+    drawLine(bracket, Offset(m, m + arm), Offset(m, m), sw)
+    drawLine(bracket, Offset(m, m), Offset(m + arm, m), sw)
+    drawLine(bracket, Offset(w - m - arm, m), Offset(w - m, m), sw)
+    drawLine(bracket, Offset(w - m, m), Offset(w - m, m + arm), sw)
+    drawLine(bracket, Offset(m, h - m - arm), Offset(m, h - m), sw)
+    drawLine(bracket, Offset(m, h - m), Offset(m + arm, h - m), sw)
+    drawLine(bracket, Offset(w - m - arm, h - m), Offset(w - m, h - m), sw)
+    drawLine(bracket, Offset(w - m, h - m), Offset(w - m, h - m - arm), sw)
+
+    // 底部压暗，保证版本号等小字读得清
+    drawRect(
+        brush = Brush.verticalGradient(
+            colors = listOf(Color(0x00000000), Color(0x88070A0E)),
+            startY = h * 0.6f,
+            endY = h,
+        ),
+    )
 }
