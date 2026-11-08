@@ -56,6 +56,7 @@ fun RunScreen(
                 CombatScreen(
                     engine = engine,
                     revision = revision,
+                    onChanged = refresh,
                     onFinished = {
                         run.finishCombat()
                         refresh()

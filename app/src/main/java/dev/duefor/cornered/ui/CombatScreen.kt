@@ -42,9 +42,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import dev.duefor.cornered.game.Card
 import dev.duefor.cornered.game.CombatEngine
 import dev.duefor.cornered.game.EnemyState
 import dev.duefor.cornered.game.Intent
+import dev.duefor.cornered.game.Relic
 import dev.duefor.cornered.game.Status
 import dev.duefor.cornered.game.Target
 import dev.duefor.cornered.ui.theme.AccentCyan
@@ -62,6 +64,7 @@ import dev.duefor.cornered.ui.theme.InkMuted
 fun CombatScreen(
     engine: CombatEngine,
     revision: Int,
+    onChanged: () -> Unit,
     onFinished: () -> Unit,
     onExit: () -> Unit,
 ) {
@@ -78,7 +81,9 @@ fun CombatScreen(
     val needsTarget = selectedCard != null && selectedCard.target == Target.Enemy
 
     fun play(index: Int, target: Int) {
-        engine.playCard(index, target)
+        if (engine.playCard(index, target)) {
+            onChanged()
+        }
         selectedIndex = null
         local++
     }
@@ -150,10 +155,11 @@ fun CombatScreen(
             )
         }
 
-        AbilityRow(engine)
+        AbilityRow(powers = engine.activePowers.toList(), relics = engine.relics)
 
         HandRow(
-            engine = engine,
+            cards = engine.hand.toList(),
+            playable = engine.hand.indices.map { engine.canPlay(it) },
             selectedIndex = selectedIndex,
             onCardClick = { tapCard(it) },
         )
@@ -169,6 +175,7 @@ fun CombatScreen(
                 engine.endTurn()
                 selectedIndex = null
                 local++
+                onChanged()
             },
         )
     }
@@ -232,15 +239,15 @@ private fun CardPreview(
 }
 
 @Composable
-private fun AbilityRow(engine: CombatEngine) {
-    if (engine.activePowers.isEmpty() && engine.relics.isEmpty()) return
+private fun AbilityRow(powers: List<Card>, relics: List<Relic>) {
+    if (powers.isEmpty() && relics.isEmpty()) return
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        engine.activePowers.forEach { power ->
+        powers.forEach { power ->
             Text(
                 text = power.name,
                 fontSize = 9.sp,
@@ -251,7 +258,7 @@ private fun AbilityRow(engine: CombatEngine) {
                     .padding(horizontal = 5.dp, vertical = 1.dp),
             )
         }
-        engine.relics.forEach { relic ->
+        relics.forEach { relic ->
             Text(
                 text = relic.name,
                 fontSize = 9.sp,
@@ -267,7 +274,8 @@ private fun AbilityRow(engine: CombatEngine) {
 
 @Composable
 private fun HandRow(
-    engine: CombatEngine,
+    cards: List<Card>,
+    playable: List<Boolean>,
     selectedIndex: Int?,
     onCardClick: (Int) -> Unit,
 ) {
@@ -278,7 +286,6 @@ private fun HandRow(
             .padding(top = 6.dp),
     ) {
         val cardWidth = 84.dp
-        val cards = engine.hand.toList()
         val step = if (cards.size <= 1) 0.dp else minOf(
             cardWidth + 6.dp,
             (maxWidth - cardWidth) / (cards.size - 1),
@@ -296,7 +303,7 @@ private fun HandRow(
                 CardView(
                     card = card,
                     width = cardWidth,
-                    playable = engine.canPlay(index),
+                    playable = playable.getOrElse(index) { false },
                     selected = isSelected,
                     onClick = { onCardClick(index) },
                 )
