@@ -11,6 +11,9 @@ class RunRepository(context: Context) {
 
     fun hasSave(): Boolean = prefs.contains(KEY_RUN)
 
+    /** 启动时校验：旧版本或损坏的存档会被清掉，避免主菜单出现点了没反应「继续游戏」。 */
+    fun hasValidSave(): Boolean = load() != null
+
     fun save(run: RunState) {
         prefs.edit().putString(KEY_RUN, RunCodec.encode(run)).apply()
     }

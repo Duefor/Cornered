@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "relics": [
+    {
+      "id": "lantern",
+      "name": "提灯",
+      "text": "战斗开始时获得 5 点格挡",
+      "triggers": [{ "on": "combatStart", "effects": [{ "kind": "block", "amount": 5 }] }]
+    },
+    {
+      "id": "iron_bracer",
+      "name": "铁护腕",
+      "text": "战斗开始时获得 1 点力量",
+      "triggers": [
+        { "on": "combatStart", "effects": [{ "kind": "apply", "status": "strength", "stacks": 1, "target": "self" }] }
+      ]
+    },
+    {
+      "id": "feather",
+      "name": "轻羽",
+      "text": "战斗开始时获得 1 点敏捷",
+      "triggers": [
+        { "on": "combatStart", "effects": [{ "kind": "apply", "status": "dexterity", "stacks": 1, "target": "self" }] }
+      ]
+    },
+    {
+      "id": "blood_vial",
+      "name": "血瓶",
+      "text": "战斗开始时回复 8 点生命",
+      "triggers": [{ "on": "combatStart", "effects": [{ "kind": "heal", "amount": 8 }] }]
+    },
+    {
+      "id": "whetstone",
+      "name": "磨刀石",
+      "text": "战斗开始时多抽 1 张牌",
+      "triggers": [{ "on": "combatStart", "effects": [{ "kind": "draw", "count": 1 }] }]
+    },
+    {
+      "id": "mirror",
+      "name": "护心镜",
+      "text": "每回合结束获得 3 点格挡",
+      "triggers": [{ "on": "turnEnd", "effects": [{ "kind": "block", "amount": 3 }] }]
+    },
+    {
+      "id": "war_drum",
+      "name": "战鼓",
+      "text": "每回合开始时多抽 1 张牌",
+      "triggers": [{ "on": "turnStart", "effects": [{ "kind": "draw", "count": 1 }] }]
+    },
+    {
+      "id": "ember_heart",
+      "name": "熔火之心",
+      "text": "受到伤害时，对全体敌人造成 2 点伤害",
+      "triggers": [
+        { "on": "damageTaken", "effects": [{ "kind": "damage", "amount": 2, "target": "all" }] }
+      ]
+    },
+    {
+      "id": "energy_orb",
+      "name": "能量宝珠",
+      "text": "战斗开始时获得 1 点能量",
+      "triggers": [{ "on": "combatStart", "effects": [{ "kind": "energy", "amount": 1 }] }]
+    },
+    {
+      "id": "thorn_ring",
+      "name": "荆棘之环",
+      "text": "击败敌人时回复 3 点生命",
+      "triggers": [{ "on": "enemyKilled", "effects": [{ "kind": "heal", "amount": 3 }] }]
+    }
+  ]
+}

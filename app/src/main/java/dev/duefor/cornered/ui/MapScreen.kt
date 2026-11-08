@@ -82,7 +82,7 @@ fun MapScreen(
         ) {
             Column {
                 Text(
-                    text = if (run.deepestFloor == 0) "起点" else "第 ${run.deepestFloor} 层",
+                    text = "${run.act.name} · " + if (run.deepestFloor == 0) "起点" else "第 ${run.deepestFloor % 100} 层",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Ink,
@@ -92,6 +92,13 @@ fun MapScreen(
                     fontSize = 11.sp,
                     color = InkMuted,
                 )
+                if (run.relics.isNotEmpty()) {
+                    Text(
+                        text = run.relics.joinToString(" · ") { it.name },
+                        fontSize = 10.sp,
+                        color = Color(0xFFE9B44C),
+                    )
+                }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { showDeck = true }) {

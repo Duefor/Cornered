@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "acts": [
+    {
+      "id": "act1",
+      "name": "第一幕 · 腐朽回廊",
+      "floors": 11,
+      "encounters": [["worm"], ["guard"], ["bandit"], ["worm", "bandit"], ["guard", "worm"]],
+      "elites": [["colossus"]],
+      "bosses": [["eye"]],
+      "weights": { "combat": 55, "treasure": 15, "elite": 13, "rest": 12 }
+    },
+    {
+      "id": "act2",
+      "name": "第二幕 · 沉没神殿",
+      "floors": 11,
+      "encounters": [["gargoyle"], ["hexer"], ["bog_beast"], ["gargoyle", "hexer"], ["bog_beast", "gargoyle"]],
+      "elites": [["cerberus"]],
+      "bosses": [["bishop"]],
+      "weights": { "combat": 50, "treasure": 14, "elite": 18, "rest": 14 }
+    },
+    {
+      "id": "act3",
+      "name": "第三幕 · 虚空之巅",
+      "floors": 11,
+      "encounters": [["void_crawler"], ["iron_maiden"], ["nightmare"], ["void_crawler", "nightmare"], ["iron_maiden", "void_crawler"]],
+      "elites": [["abyss_guard"]],
+      "bosses": [["final_eye"]],
+      "weights": { "combat": 48, "treasure": 12, "elite": 22, "rest": 14 }
+    }
+  ]
+}

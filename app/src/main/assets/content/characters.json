@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "ironclad",
+      "name": "铁卫",
+      "subtitle": "稳健的重击者",
+      "description": "生命厚实，靠重击叠易伤、用格挡换回合。上手最简单。",
+      "maxHp": 80,
+      "maxEnergy": 3,
+      "handSize": 5,
+      "starterDeck": [
+        { "card": "strike", "count": 5 },
+        { "card": "defend", "count": 4 },
+        { "card": "bash", "count": 1 }
+      ],
+      "rewardPool": [
+        "cleave", "twin_strike", "iron_wall", "quick_step", "guard",
+        "rend", "intimidate", "flex", "heavy_blow", "lifesteal", "battle_trance", "recharge",
+        "berserk", "whirlwind", "impervious",
+        "demon_form", "metallicize", "barricade", "combo_master",
+        "insight", "energy_core", "thorns", "iron_will"
+      ]
+    },
+    {
+      "id": "shadow",
+      "name": "影刃",
+      "subtitle": "快攻的连击者",
+      "description": "血薄，但每回合多抽一张牌；匕首不耗能量，靠出牌数量堆伤害。",
+      "maxHp": 68,
+      "maxEnergy": 3,
+      "handSize": 6,
+      "starterDeck": [
+        { "card": "dagger", "count": 4 },
+        { "card": "dodge", "count": 4 },
+        { "card": "shadow_strike", "count": 2 }
+      ],
+      "rewardPool": [
+        "dagger", "shadow_strike", "twin_strike", "cleave", "quick_step", "guard",
+        "rend", "intimidate", "flex", "battle_trance", "recharge", "lifesteal",
+        "berserk", "whirlwind", "impervious",
+        "demon_form", "metallicize", "barricade", "combo_master",
+        "insight", "energy_core", "thorns", "iron_will"
+      ]
+    }
+  ]
+}

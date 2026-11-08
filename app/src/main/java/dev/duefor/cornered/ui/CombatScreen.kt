@@ -3,11 +3,11 @@ package dev.duefor.cornered.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -40,11 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import dev.duefor.cornered.game.CombatEngine
 import dev.duefor.cornered.game.EnemyState
 import dev.duefor.cornered.game.Intent
@@ -57,9 +54,9 @@ import dev.duefor.cornered.ui.theme.Ink
 import dev.duefor.cornered.ui.theme.InkMuted
 
 /**
- * 引擎状态是普通 var、不是 Compose State，所以这里只把「值」传给子组件
- * （hp / 能量 / 状态列表），绝不传 engine 对象本身 —— 否则子组件参数不变会被跳过重组，
- * 界面上能量、血量就会卡在旧值。
+ * 引擎状态是普通 var，不是 Compose State，所以只把「值」传给子组件。
+ *
+ * 布局：敌人区 -> 出牌预览（选中时）-> 能力/遗物 -> 手牌 -> 底部状态条
  */
 @Composable
 fun CombatScreen(
@@ -77,8 +74,8 @@ fun CombatScreen(
 
     val aliveEnemies = engine.aliveEnemies
     val selectedCard = selectedIndex?.let { engine.hand.getOrNull(it) }
-    // 单体卡即使只有一个敌人也要先选目标，和多个敌人时保持同一套操作
-    val awaitingTarget = selectedCard != null && selectedCard.target == Target.Enemy
+    // 单体卡需要指定目标；自身 / 全体牌点「确认」即可
+    val needsTarget = selectedCard != null && selectedCard.target == Target.Enemy
 
     fun play(index: Int, target: Int) {
         engine.playCard(index, target)
@@ -87,20 +84,16 @@ fun CombatScreen(
     }
 
     fun tapCard(index: Int) {
-        val card = engine.hand.getOrNull(index) ?: return
         if (!engine.canPlay(index)) return
-        if (card.target == Target.Enemy) {
-            selectedIndex = if (selectedIndex == index) null else index
-        } else {
-            play(index, 0)
-        }
+        selectedIndex = if (selectedIndex == index) null else index
+        local++
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -115,15 +108,6 @@ fun CombatScreen(
             )
             TextButton(onClick = onExit) { Text("退出", fontSize = 12.sp, color = InkMuted) }
         }
-
-        PlayerBar(
-            hp = engine.hp,
-            maxHp = engine.maxHp,
-            block = engine.block,
-            statuses = statusList(engine.statuses),
-        )
-
-        Spacer(Modifier.height(8.dp))
 
         Row(
             modifier = Modifier
@@ -142,7 +126,7 @@ fun CombatScreen(
                     block = enemy.block,
                     statuses = statusList(enemy.statuses),
                     alive = enemy.alive,
-                    highlight = awaitingTarget && enemy.alive,
+                    highlight = needsTarget && enemy.alive,
                     onClick = {
                         val index = selectedIndex
                         if (index != null && enemy.alive) play(index, aliveIndex)
@@ -151,76 +135,229 @@ fun CombatScreen(
             }
         }
 
-        if (awaitingTarget) {
-            Text(
-                text = "选择目标",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-                color = AccentCyan,
-            )
-        }
-
-        // 手牌：叠扇排列。手牌多时按剩余宽度自动加大重叠，选中的那张抬起来并置顶。
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val cardWidth = 84.dp
-            val cardHeight = cardWidth * 1.62f
-            val cards = engine.hand.toList()
-            val available = maxWidth
-            val step = if (cards.size <= 1) 0.dp else minOf(
-                cardWidth + 6.dp,
-                (available - cardWidth) / (cards.size - 1),
-            )
-            val totalWidth = cardWidth + step * (cards.size - 1)
-            val startX = ((available - totalWidth) / 2).coerceAtLeast(0.dp)
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(cardHeight + 10.dp)
-                    .padding(vertical = 4.dp),
-            ) {
-                cards.forEachIndexed { index, card ->
-                    val isSelected = selectedIndex == index
-                    Box(
-                        modifier = Modifier
-                            .offset(x = startX + step * index, y = if (isSelected) 0.dp else 8.dp)
-                            .zIndex(if (isSelected) 1f else index.toFloat()),
-                    ) {
-                        CardView(
-                            card = card,
-                            width = cardWidth,
-                            playable = engine.canPlay(index),
-                            selected = isSelected,
-                            onClick = { tapCard(index) },
-                        )
-                    }
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            EnergyDisplay(energy = engine.energy, max = engine.maxEnergy)
-            Button(
-                onClick = {
-                    engine.endTurn()
+        if (selectedCard != null) {
+            CardPreview(
+                name = selectedCard.name,
+                cost = selectedCard.cost,
+                description = selectedCard.description,
+                accent = selectedCard.type.accentColor(),
+                needsTarget = needsTarget,
+                onConfirm = { selectedIndex?.let { play(it, 0) } },
+                onCancel = {
                     selectedIndex = null
                     local++
                 },
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AccentCyan,
-                    contentColor = Color(0xFF06231F),
-                ),
-            ) {
-                Text("结束回合", fontWeight = FontWeight.Bold)
+            )
+        }
+
+        AbilityRow(engine)
+
+        HandRow(
+            engine = engine,
+            selectedIndex = selectedIndex,
+            onCardClick = { tapCard(it) },
+        )
+
+        BottomStatusBar(
+            hp = engine.hp,
+            maxHp = engine.maxHp,
+            block = engine.block,
+            statuses = statusList(engine.statuses),
+            energy = engine.energy,
+            maxEnergy = engine.maxEnergy,
+            onEndTurn = {
+                engine.endTurn()
+                selectedIndex = null
+                local++
+            },
+        )
+    }
+}
+
+@Composable
+private fun CardPreview(
+    name: String,
+    cost: Int,
+    description: String,
+    accent: Color,
+    needsTarget: Boolean,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(accent.copy(alpha = 0.12f))
+            .border(1.5.dp, AccentCyan, RoundedCornerShape(14.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(accent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("$cost", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0B0F14))
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink)
+            Text(description, fontSize = 11.sp, color = InkMuted)
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (needsTarget) {
+                Text("点敌人", fontSize = 11.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
+            } else {
+                Button(
+                    onClick = onConfirm,
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentCyan,
+                        contentColor = Color(0xFF06231F),
+                    ),
+                ) {
+                    Text("确认", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
+            TextButton(onClick = onCancel) {
+                Text("取消", fontSize = 10.sp, color = InkMuted)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AbilityRow(engine: CombatEngine) {
+    if (engine.activePowers.isEmpty() && engine.relics.isEmpty()) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        engine.activePowers.forEach { power ->
+            Text(
+                text = power.name,
+                fontSize = 9.sp,
+                color = Color(0xFFB07CE8),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF2A2036))
+                    .padding(horizontal = 5.dp, vertical = 1.dp),
+            )
+        }
+        engine.relics.forEach { relic ->
+            Text(
+                text = relic.name,
+                fontSize = 9.sp,
+                color = Color(0xFFE9B44C),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF2E2618))
+                    .padding(horizontal = 5.dp, vertical = 1.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HandRow(
+    engine: CombatEngine,
+    selectedIndex: Int?,
+    onCardClick: (Int) -> Unit,
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+            .padding(top = 6.dp),
+    ) {
+        val cardWidth = 84.dp
+        val cards = engine.hand.toList()
+        val step = if (cards.size <= 1) 0.dp else minOf(
+            cardWidth + 6.dp,
+            (maxWidth - cardWidth) / (cards.size - 1),
+        )
+        val totalWidth = cardWidth + step * (cards.size - 1)
+        val startX = ((maxWidth - totalWidth) / 2).coerceAtLeast(0.dp)
+
+        cards.forEachIndexed { index, card ->
+            val isSelected = selectedIndex == index
+            Box(
+                modifier = Modifier
+                    .offset(x = startX + step * index, y = if (isSelected) 0.dp else 8.dp)
+                    .zIndex(if (isSelected) 1f else index.toFloat()),
+            ) {
+                CardView(
+                    card = card,
+                    width = cardWidth,
+                    playable = engine.canPlay(index),
+                    selected = isSelected,
+                    onClick = { onCardClick(index) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomStatusBar(
+    hp: Int,
+    maxHp: Int,
+    block: Int,
+    statuses: List<Pair<Status, Int>>,
+    energy: Int,
+    maxEnergy: Int,
+    onEndTurn: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 2.dp, bottom = 2.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(ArenaSurface)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "生命 $hp/$maxHp",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Ink,
+                )
+                if (block > 0) {
+                    Spacer(Modifier.width(8.dp))
+                    Text("格挡 $block", fontSize = 11.sp, color = Color(0xFF7FC8F8))
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            HpBar(hp, maxHp, AccentCyan)
+            if (statuses.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                StatusChips(statuses)
+            }
+        }
+
+        Spacer(Modifier.width(10.dp))
+        EnergyDisplay(energy = energy, max = maxEnergy)
+        Spacer(Modifier.width(10.dp))
+        Button(
+            onClick = onEndTurn,
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AccentCyan,
+                contentColor = Color(0xFF06231F),
+            ),
+        ) {
+            Text("结束回合", fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -240,59 +377,20 @@ private fun intentLabel(engine: CombatEngine, enemy: EnemyState): String =
     }
 
 @Composable
-private fun PlayerBar(
-    hp: Int,
-    maxHp: Int,
-    block: Int,
-    statuses: List<Pair<Status, Int>>,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(ArenaSurface)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "生命 $hp/$maxHp",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Ink,
-            )
-            if (block > 0) {
-                Text("格挡 $block", fontSize = 12.sp, color = Color(0xFF7FC8F8))
-            }
-        }
-        Spacer(Modifier.height(5.dp))
-        HpBar(hp, maxHp, AccentCyan)
-        if (statuses.isNotEmpty()) {
-            Spacer(Modifier.height(5.dp))
-            StatusChips(statuses)
-        }
-    }
-}
-
-@Composable
 private fun EnergyDisplay(energy: Int, max: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         repeat(max) { index ->
             Box(
                 modifier = Modifier
-                    .padding(end = 5.dp)
-                    .size(13.dp)
+                    .padding(end = 4.dp)
+                    .size(12.dp)
                     .clip(CircleShape)
                     .background(if (index < energy) Color(0xFFE9B44C) else Color(0xFF243040)),
             )
         }
         Text(
             text = "$energy",
-            fontSize = 15.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFFE9B44C),
         )
@@ -317,7 +415,7 @@ private fun EnemyPanel(
             .clip(RoundedCornerShape(14.dp))
             .background(if (highlight) AccentRed.copy(alpha = 0.16f) else ArenaSurface)
             .border(
-                width = 1.dp,
+                width = if (highlight) 2.dp else 1.dp,
                 color = if (highlight) AccentRed else Color(0xFF243040),
                 shape = RoundedCornerShape(14.dp),
             )

@@ -1,15 +1,14 @@
 package dev.duefor.cornered.data
 
 import dev.duefor.cornered.game.Card
-import dev.duefor.cornered.game.CardPool
-import dev.duefor.cornered.game.Characters
 import dev.duefor.cornered.game.CombatEngine
 import dev.duefor.cornered.game.CombatPhase
 import dev.duefor.cornered.game.CombatSnapshot
-import dev.duefor.cornered.game.EnemyPool
 import dev.duefor.cornered.game.EnemySnapshot
+import dev.duefor.cornered.game.GameContent
 import dev.duefor.cornered.game.GameMap
 import dev.duefor.cornered.game.MapGenerator
+import dev.duefor.cornered.game.Relic
 import dev.duefor.cornered.game.RunPhase
 import dev.duefor.cornered.game.RunState
 import dev.duefor.cornered.game.Status
@@ -20,18 +19,20 @@ import kotlin.random.Random
 /**
  * 存档的 JSON 编解码。不依赖 Android Context，方便单测。
  *
- * 地图不逐节点存，只存种子再生成一遍；战斗则完整存四个牌堆与敌人状态，
+ * 地图不逐节点存，只存「幕 + 种子」再生成一遍；战斗完整存四个牌堆、能力与敌人状态，
  * 所以中途杀掉 App 也能从任意一步继续。
  */
 object RunCodec {
 
-    private const val VERSION = 1
+    /** v2：加入幕、遗物、能力牌；v1 存档不再兼容。 */
+    const val VERSION = 2
 
     fun encode(run: RunState): String {
         val json = JSONObject()
         json.put("version", VERSION)
-        json.put("mapSeed", run.mapSeed)
         json.put("character", run.character.id)
+        json.put("actIndex", run.actIndex)
+        json.put("mapSeed", run.mapSeed)
         json.put("hp", run.hp)
         json.put("maxHp", run.maxHp)
         json.put("gold", run.gold)
@@ -39,8 +40,10 @@ object RunCodec {
         json.put("phase", run.phase.name)
         json.put("lastGoldGain", run.lastGoldGain)
         json.put("deck", cardIds(run.deck))
+        json.put("relics", JSONArray(run.relics.map { it.id }))
         json.put("reachable", JSONArray(run.reachable.sorted()))
         json.put("rewards", cardIds(run.rewardCards))
+        json.put("pendingRelic", run.pendingRelic?.id ?: JSONObject.NULL)
         json.put("currentNodeId", run.currentNodeId ?: JSONObject.NULL)
         run.combat?.let { json.put("combat", combatJson(it)) }
         return json.toString()
@@ -50,10 +53,11 @@ object RunCodec {
         val json = JSONObject(raw)
         require(json.getInt("version") == VERSION) { "存档版本不匹配" }
 
+        val character = GameContent.characterOrDefault(json.optString("character"))
+        val actIndex = json.getInt("actIndex")
         val mapSeed = json.getLong("mapSeed")
-        // 老存档没有 character 字段，默认回落第一个角色
-        val character = Characters.byId(json.optString("character")) ?: Characters.default
-        val map: GameMap = MapGenerator.generate(Random(mapSeed * 31 + 7))
+        val act = GameContent.act(actIndex)
+        val map: GameMap = MapGenerator.generate(act, Random(mapSeed))
 
         val reachableArray = json.getJSONArray("reachable")
         val reachable = (0 until reachableArray.length()).map { reachableArray.getInt(it) }.toSet()
@@ -61,23 +65,38 @@ object RunCodec {
         val nodeId = json.optInt("currentNodeId", -1).takeIf { it >= 0 }
             ?.takeIf { it in map.nodes.indices }
 
-        val combat = json.optJSONObject("combat")?.let { combatFrom(it, mapSeed) }
+        val relics = json.optJSONArray("relics")?.let { array ->
+            (0 until array.length()).map { index ->
+                val id = array.getString(index)
+                GameContent.relics.firstOrNull { it.id == id } ?: error("未知遗物：$id")
+            }
+        }.orEmpty()
+
+        val pendingRelicId = json.optString("pendingRelic").takeIf { it.isNotBlank() && it != "null" }
+        val pendingRelic: Relic? = pendingRelicId?.let { id ->
+            GameContent.relics.firstOrNull { it.id == id } ?: error("未知遗物：$id")
+        }
+
+        val combat = json.optJSONObject("combat")?.let { combatFrom(it, mapSeed, relics) }
 
         RunState.restore(
             rng = Random(mapSeed xor 0x5DEECE66DL),
             mapSeed = mapSeed,
             map = map,
             character = character,
+            actIndex = actIndex,
             hp = json.getInt("hp"),
             maxHp = json.getInt("maxHp"),
             gold = json.getInt("gold"),
             deck = cards(json.getJSONArray("deck")),
+            relics = relics,
             deepestFloor = json.getInt("deepestFloor"),
             currentNodeId = nodeId,
             reachable = reachable,
             phase = RunPhase.valueOf(json.getString("phase")),
             combat = combat,
             rewardCards = cards(json.getJSONArray("rewards")),
+            pendingRelic = pendingRelic,
             lastGoldGain = json.optInt("lastGoldGain", 0),
         )
     }.getOrNull()
@@ -91,7 +110,7 @@ object RunCodec {
         val result = ArrayList<Card>(array.length())
         for (index in 0 until array.length()) {
             val id = array.getString(index)
-            result += CardPool.byId(id) ?: error("未知卡牌：$id")
+            result += GameContent.cards.byId(id) ?: error("未知卡牌：$id")
         }
         return result
     }
@@ -102,7 +121,7 @@ object RunCodec {
     private fun statuses(json: JSONObject): Map<Status, Int> {
         val result = mutableMapOf<Status, Int>()
         json.keys().forEach { key ->
-            val status = runCatching { Status.valueOf(key) }.getOrNull() ?: return@forEach
+            val status = Status.fromJson(key) ?: return@forEach
             result[status] = json.optInt(key)
         }
         return result
@@ -124,6 +143,7 @@ object RunCodec {
             put("hand", cardIds(snap.hand))
             put("discardPile", cardIds(snap.discardPile))
             put("exhaustPile", cardIds(snap.exhaustPile))
+            put("powers", cardIds(snap.activePowers))
 
             val enemyArray = JSONArray()
             snap.enemies.forEach { enemy ->
@@ -142,12 +162,13 @@ object RunCodec {
         }
     }
 
-    private fun combatFrom(json: JSONObject, mapSeed: Long): CombatEngine {
+    private fun combatFrom(json: JSONObject, mapSeed: Long, relics: List<Relic>): CombatEngine {
         val enemyArray = json.getJSONArray("enemies")
         val enemies = ArrayList<EnemySnapshot>(enemyArray.length())
         for (index in 0 until enemyArray.length()) {
             val item = enemyArray.getJSONObject(index)
-            val def = EnemyPool.byId(item.getString("id")) ?: error("未知敌人：${item.getString("id")}")
+            val def = GameContent.enemies.byId(item.getString("id"))
+                ?: error("未知敌人：${item.getString("id")}")
             enemies += EnemySnapshot(
                 def = def,
                 hp = item.getInt("hp"),
@@ -172,8 +193,9 @@ object RunCodec {
             hand = cards(json.getJSONArray("hand")),
             discardPile = cards(json.getJSONArray("discardPile")),
             exhaustPile = cards(json.getJSONArray("exhaustPile")),
+            activePowers = json.optJSONArray("powers")?.let { cards(it) }.orEmpty(),
             enemies = enemies,
         )
-        return CombatEngine.restore(snapshot, Random(mapSeed xor 0x2545F4914F6CDD1DL))
+        return CombatEngine.restore(snapshot, Random(mapSeed xor 0x2545F4914F6CDD1DL), relics)
     }
 }

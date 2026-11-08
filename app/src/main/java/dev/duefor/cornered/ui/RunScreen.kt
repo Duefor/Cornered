@@ -94,6 +94,14 @@ fun RunScreen(
             },
         )
 
+        RunPhase.ActClear -> ActClearScreen(
+            run = run,
+            onTake = { card ->
+                run.takeActClearReward(card)
+                refresh()
+            },
+        )
+
         RunPhase.Victory, RunPhase.Defeat -> EndScreen(
             victory = run.phase == RunPhase.Victory,
             run = run,

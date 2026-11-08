@@ -34,6 +34,7 @@ data class CombatSnapshot(
     val hand: List<Card>,
     val discardPile: List<Card>,
     val exhaustPile: List<Card>,
+    val activePowers: List<Card>,
     val enemies: List<EnemySnapshot>,
 )
 
@@ -49,8 +50,8 @@ data class EnemySnapshot(
 /**
  * 一回合制战斗的全部规则，纯 Kotlin、无 Android 依赖，可以直接单测。
  *
- * 回合流程：玩家出牌 -> 结束回合 -> 弃手牌/自身负面状态 -1 -> 敌人依次行动 -> 玩家回合开始
- * （格挡清零、能量回满、抽 5 张）。
+ * 回合流程：玩家出牌 -> 结束回合 -> 能力/遗物的回合结束触发 -> 弃手牌、状态 -1
+ * -> 敌人依次行动 -> 玩家回合开始（格挡清零、能量回满、抽牌、回合开始触发）。
  */
 class CombatEngine private constructor(
     val maxHp: Int,
@@ -58,6 +59,7 @@ class CombatEngine private constructor(
     val handSize: Int,
     val enemies: List<EnemyState>,
     private val rng: Random,
+    val relics: List<Relic>,
 ) {
     var hp: Int = 0
         private set
@@ -76,7 +78,13 @@ class CombatEngine private constructor(
     val hand = mutableListOf<Card>()
     val discardPile = mutableListOf<Card>()
     val exhaustPile = mutableListOf<Card>()
+
+    /** 已打出的能力牌，本场战斗常驻 */
+    val activePowers = mutableListOf<Card>()
+
     val log = mutableListOf<String>()
+
+    private val triggerCounters = mutableMapOf<String, Int>()
 
     constructor(
         startHp: Int,
@@ -86,15 +94,20 @@ class CombatEngine private constructor(
         rng: Random,
         maxEnergy: Int = DEFAULT_MAX_ENERGY,
         handSize: Int = DEFAULT_HAND_SIZE,
-    ) : this(maxHp, maxEnergy, handSize, enemies, rng) {
+        relics: List<Relic> = emptyList(),
+    ) : this(maxHp, maxEnergy, handSize, enemies, rng, relics) {
         hp = startHp.coerceIn(0, maxHp)
         drawPile.addAll(deck)
         drawPile.shuffle(rng)
         draw(handSize)
+        fireTriggers(TriggerEvent.CombatStart)
     }
 
     val aliveEnemies: List<EnemyState> get() = enemies.filter { it.alive }
     val isOver: Boolean get() = phase == CombatPhase.Victory || phase == CombatPhase.Defeat
+
+    /** 屏障类能力：回合开始不清空格挡 */
+    val keepsBlock: Boolean get() = activePowers.any { it.keepBlock }
 
     fun statusOf(status: Status): Int = statuses[status] ?: 0
     fun hasStatus(status: Status): Boolean = statusOf(status) > 0
@@ -121,14 +134,27 @@ class CombatEngine private constructor(
         energy -= card.cost
         hand.removeAt(index)
         log.add("打出「${card.name}」")
-        applyEffects(card, targets)
-        if (card.exhaust) exhaustPile.add(card) else discardPile.add(card)
+        applyEffects(card.effects, card.target, targets)
+
+        when {
+            card.type == CardType.Power -> activePowers += card
+            card.exhaust -> exhaustPile += card
+            else -> discardPile += card
+        }
+
+        fireTriggers(TriggerEvent.CardPlayed, card.type)
         checkEnd()
         return true
     }
 
     fun endTurn() {
         if (phase != CombatPhase.PlayerTurn) return
+        fireTriggers(TriggerEvent.TurnEnd)
+        if (hp <= 0) {
+            phase = CombatPhase.Defeat
+            return
+        }
+
         discardPile.addAll(hand)
         hand.clear()
         tickDurations(statuses)
@@ -172,19 +198,21 @@ class CombatEngine private constructor(
         hand = hand.toList(),
         discardPile = discardPile.toList(),
         exhaustPile = exhaustPile.toList(),
+        activePowers = activePowers.toList(),
         enemies = enemies.map {
             EnemySnapshot(it.def, it.hp, it.maxHp, it.block, it.statuses.toMap(), it.moveIndex)
         },
     )
 
-    // ---------------------------------------------------------------- 内部
+    // ---------------------------------------------------------------- 回合
 
     private fun startPlayerTurn() {
         turn++
-        block = 0
+        if (!keepsBlock) block = 0
         energy = maxEnergy
         phase = CombatPhase.PlayerTurn
         draw(handSize)
+        fireTriggers(TriggerEvent.TurnStart)
     }
 
     private fun runEnemyTurn() {
@@ -205,14 +233,79 @@ class CombatEngine private constructor(
         enemies.filter { it.alive }.forEach { tickDurations(it.statuses) }
     }
 
-    private fun applyEffects(card: Card, targets: List<EnemyState>) {
-        for (effect in card.effects) {
+    // ---------------------------------------------------------------- 触发
+
+    private fun fireTriggers(event: TriggerEvent, cardType: CardType? = null) {
+        relics.forEach { relic ->
+            relic.triggers.forEachIndexed { index, trigger ->
+                maybeFire("relic:${relic.id}:$index", trigger, event, cardType)
+            }
+        }
+        activePowers.toList().forEach { power ->
+            power.triggers.forEachIndexed { index, trigger ->
+                maybeFire("power:${power.id}:$index", trigger, event, cardType)
+            }
+        }
+    }
+
+    private fun maybeFire(
+        key: String,
+        trigger: TriggeredEffect,
+        event: TriggerEvent,
+        cardType: CardType?,
+    ) {
+        if (trigger.on != event) return
+        if (event == TriggerEvent.CardPlayed && trigger.cardType != null && trigger.cardType != cardType) return
+
+        val count = (triggerCounters[key] ?: 0) + 1
+        triggerCounters[key] = count
+        if (count % trigger.every == 0) {
+            applyTriggerEffects(trigger.effects)
+        }
+    }
+
+    private fun applyTriggerEffects(effects: List<Effect>) {
+        for (effect in effects) {
             when (effect) {
-                is Effect.Damage -> resolveDamage(effect, card.target, targets)
+                is Effect.Damage -> {
+                    val targets = when (effect.target) {
+                        Target.Self -> emptyList()
+                        Target.AllEnemies -> aliveEnemies
+                        Target.Enemy -> aliveEnemies.take(1)
+                    }
+                    targets.forEach { enemy ->
+                        repeat(effect.times) { if (enemy.alive) hitEnemy(enemy, effect.amount) }
+                    }
+                }
                 is Effect.Block -> gainBlock(effect.amount)
                 is Effect.Draw -> draw(effect.count)
                 is Effect.Energy -> energy += effect.amount
-                is Effect.Apply -> resolveApply(effect, card.target, targets)
+                is Effect.Apply -> when (effect.target) {
+                    Target.Self -> addStatus(statuses, effect.status, effect.stacks)
+                    Target.AllEnemies -> aliveEnemies.forEach {
+                        addStatus(it.statuses, effect.status, effect.stacks)
+                    }
+                    Target.Enemy -> aliveEnemies.take(1).forEach {
+                        addStatus(it.statuses, effect.status, effect.stacks)
+                    }
+                }
+                is Effect.Heal -> hp = min(maxHp, hp + effect.amount)
+                is Effect.SelfDamage -> hp = max(0, hp - effect.amount)
+            }
+        }
+        checkEnd()
+    }
+
+    // ---------------------------------------------------------------- 结算
+
+    private fun applyEffects(effects: List<Effect>, cardTarget: Target, targets: List<EnemyState>) {
+        for (effect in effects) {
+            when (effect) {
+                is Effect.Damage -> resolveDamage(effect, cardTarget, targets)
+                is Effect.Block -> gainBlock(effect.amount)
+                is Effect.Draw -> draw(effect.count)
+                is Effect.Energy -> energy += effect.amount
+                is Effect.Apply -> resolveApply(effect, cardTarget, targets)
                 is Effect.Heal -> hp = min(maxHp, hp + effect.amount)
                 is Effect.SelfDamage -> hp = max(0, hp - effect.amount)
             }
@@ -252,7 +345,11 @@ class CombatEngine private constructor(
         )
         val absorbed = min(enemy.block, damage)
         enemy.block -= absorbed
+        val before = enemy.hp
         enemy.hp = max(0, enemy.hp - (damage - absorbed))
+        if (before > 0 && enemy.hp == 0) {
+            fireTriggers(TriggerEvent.EnemyKilled)
+        }
     }
 
     private fun hitPlayer(base: Int, enemy: EnemyState) {
@@ -264,7 +361,11 @@ class CombatEngine private constructor(
         )
         val absorbed = min(block, damage)
         block -= absorbed
-        hp = max(0, hp - (damage - absorbed))
+        val taken = damage - absorbed
+        hp = max(0, hp - taken)
+        if (taken > 0) {
+            fireTriggers(TriggerEvent.DamageTaken)
+        }
     }
 
     private fun gainBlock(amount: Int) {
@@ -324,7 +425,11 @@ class CombatEngine private constructor(
         private val DURATION_STATUSES = listOf(Status.Vulnerable, Status.Weak, Status.Frail)
 
         /** 从存档快照重建一场战斗（不重新抽牌）。 */
-        fun restore(snapshot: CombatSnapshot, rng: Random): CombatEngine {
+        fun restore(
+            snapshot: CombatSnapshot,
+            rng: Random,
+            relics: List<Relic> = emptyList(),
+        ): CombatEngine {
             val enemies = snapshot.enemies.map { save ->
                 EnemyState(save.def, save.hp).apply {
                     maxHp = save.maxHp
@@ -333,7 +438,14 @@ class CombatEngine private constructor(
                     moveIndex = save.moveIndex
                 }
             }
-            val engine = CombatEngine(snapshot.maxHp, snapshot.maxEnergy, snapshot.handSize, enemies, rng)
+            val engine = CombatEngine(
+                maxHp = snapshot.maxHp,
+                maxEnergy = snapshot.maxEnergy,
+                handSize = snapshot.handSize,
+                enemies = enemies,
+                rng = rng,
+                relics = relics,
+            )
             engine.hp = snapshot.hp
             engine.block = snapshot.block
             engine.energy = snapshot.energy
@@ -344,6 +456,7 @@ class CombatEngine private constructor(
             engine.hand.addAll(snapshot.hand)
             engine.discardPile.addAll(snapshot.discardPile)
             engine.exhaustPile.addAll(snapshot.exhaustPile)
+            engine.activePowers.addAll(snapshot.activePowers)
             return engine
         }
     }

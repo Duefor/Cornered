@@ -1,0 +1,194 @@
+{
+  "version": 1,
+  "enemies": [
+    {
+      "id": "worm",
+      "name": "腐蚀蠕虫",
+      "kind": "normal",
+      "minHp": 12,
+      "maxHp": 16,
+      "pattern": [
+        { "kind": "attack", "damage": 7 },
+        { "kind": "defend", "block": 6 },
+        { "kind": "attack", "damage": 9 }
+      ]
+    },
+    {
+      "id": "guard",
+      "name": "铁面守卫",
+      "kind": "normal",
+      "minHp": 18,
+      "maxHp": 22,
+      "pattern": [
+        { "kind": "attack", "damage": 5, "times": 2 },
+        { "kind": "buff", "status": "strength", "stacks": 2 },
+        { "kind": "attack", "damage": 9 }
+      ]
+    },
+    {
+      "id": "bandit",
+      "name": "盗匪",
+      "kind": "normal",
+      "minHp": 14,
+      "maxHp": 18,
+      "pattern": [
+        { "kind": "attack", "damage": 8 },
+        { "kind": "debuff", "status": "weak", "stacks": 1 },
+        { "kind": "attack", "damage": 6 }
+      ]
+    },
+    {
+      "id": "colossus",
+      "name": "岩石巨像",
+      "kind": "elite",
+      "minHp": 44,
+      "maxHp": 48,
+      "pattern": [
+        { "kind": "attack", "damage": 12 },
+        { "kind": "defend", "block": 10 },
+        { "kind": "buff", "status": "strength", "stacks": 3 },
+        { "kind": "attack", "damage": 6, "times": 2 }
+      ]
+    },
+    {
+      "id": "eye",
+      "name": "深渊之眼",
+      "kind": "boss",
+      "minHp": 85,
+      "maxHp": 95,
+      "pattern": [
+        { "kind": "attack", "damage": 14 },
+        { "kind": "debuff", "status": "vulnerable", "stacks": 2 },
+        { "kind": "attack", "damage": 8, "times": 2 },
+        { "kind": "defend", "block": 12 },
+        { "kind": "buff", "status": "strength", "stacks": 3 }
+      ]
+    },
+
+    {
+      "id": "gargoyle",
+      "name": "石像鬼",
+      "kind": "normal",
+      "minHp": 24,
+      "maxHp": 28,
+      "pattern": [
+        { "kind": "attack", "damage": 10 },
+        { "kind": "defend", "block": 8 },
+        { "kind": "attack", "damage": 5, "times": 2 }
+      ]
+    },
+    {
+      "id": "hexer",
+      "name": "咒术师",
+      "kind": "normal",
+      "minHp": 20,
+      "maxHp": 24,
+      "pattern": [
+        { "kind": "debuff", "status": "vulnerable", "stacks": 2 },
+        { "kind": "attack", "damage": 9 },
+        { "kind": "buff", "status": "strength", "stacks": 2 }
+      ]
+    },
+    {
+      "id": "bog_beast",
+      "name": "沼泽兽",
+      "kind": "normal",
+      "minHp": 26,
+      "maxHp": 30,
+      "pattern": [
+        { "kind": "attack", "damage": 12 },
+        { "kind": "defend", "block": 10 },
+        { "kind": "attack", "damage": 7 }
+      ]
+    },
+    {
+      "id": "cerberus",
+      "name": "双头犬",
+      "kind": "elite",
+      "minHp": 62,
+      "maxHp": 68,
+      "pattern": [
+        { "kind": "attack", "damage": 8, "times": 2 },
+        { "kind": "buff", "status": "strength", "stacks": 2 },
+        { "kind": "attack", "damage": 14 }
+      ]
+    },
+    {
+      "id": "bishop",
+      "name": "腐化主教",
+      "kind": "boss",
+      "minHp": 110,
+      "maxHp": 120,
+      "pattern": [
+        { "kind": "attack", "damage": 16 },
+        { "kind": "debuff", "status": "weak", "stacks": 2 },
+        { "kind": "defend", "block": 14 },
+        { "kind": "attack", "damage": 9, "times": 2 },
+        { "kind": "buff", "status": "strength", "stacks": 3 }
+      ]
+    },
+
+    {
+      "id": "void_crawler",
+      "name": "虚空爬行者",
+      "kind": "normal",
+      "minHp": 30,
+      "maxHp": 34,
+      "pattern": [
+        { "kind": "attack", "damage": 14 },
+        { "kind": "debuff", "status": "frail", "stacks": 2 },
+        { "kind": "attack", "damage": 9 }
+      ]
+    },
+    {
+      "id": "iron_maiden",
+      "name": "铁处女",
+      "kind": "normal",
+      "minHp": 34,
+      "maxHp": 38,
+      "pattern": [
+        { "kind": "defend", "block": 14 },
+        { "kind": "attack", "damage": 10, "times": 2 },
+        { "kind": "attack", "damage": 16 }
+      ]
+    },
+    {
+      "id": "nightmare",
+      "name": "梦魇骑士",
+      "kind": "normal",
+      "minHp": 32,
+      "maxHp": 36,
+      "pattern": [
+        { "kind": "buff", "status": "strength", "stacks": 3 },
+        { "kind": "attack", "damage": 16 },
+        { "kind": "attack", "damage": 8, "times": 2 }
+      ]
+    },
+    {
+      "id": "abyss_guard",
+      "name": "深渊守卫",
+      "kind": "elite",
+      "minHp": 78,
+      "maxHp": 84,
+      "pattern": [
+        { "kind": "attack", "damage": 18 },
+        { "kind": "defend", "block": 16 },
+        { "kind": "attack", "damage": 9, "times": 2 }
+      ]
+    },
+    {
+      "id": "final_eye",
+      "name": "终焉之眼",
+      "kind": "boss",
+      "minHp": 140,
+      "maxHp": 150,
+      "pattern": [
+        { "kind": "attack", "damage": 20 },
+        { "kind": "attack", "damage": 11, "times": 2 },
+        { "kind": "buff", "status": "strength", "stacks": 4 },
+        { "kind": "defend", "block": 18 },
+        { "kind": "debuff", "status": "vulnerable", "stacks": 3 }
+      ]
+    }
+  ]
+}

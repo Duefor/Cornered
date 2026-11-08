@@ -1,0 +1,336 @@
+{
+  "version": 1,
+  "cards": [
+    {
+      "id": "strike",
+      "name": "打击",
+      "cost": 1,
+      "type": "attack",
+      "rarity": "common",
+      "target": "enemy",
+      "text": "6 点伤害",
+      "effects": [{ "kind": "damage", "amount": 6 }]
+    },
+    {
+      "id": "defend",
+      "name": "防御",
+      "cost": 1,
+      "type": "skill",
+      "rarity": "common",
+      "target": "self",
+      "text": "5 点格挡",
+      "effects": [{ "kind": "block", "amount": 5 }]
+    },
+    {
+      "id": "bash",
+      "name": "重击",
+      "cost": 2,
+      "type": "attack",
+      "rarity": "common",
+      "target": "enemy",
+      "text": "8 伤害 + 2 易伤",
+      "effects": [
+        { "kind": "damage", "amount": 8 },
+        { "kind": "apply", "status": "vulnerable", "stacks": 2, "target": "enemy" }
+      ]
+    },
+    {
+      "id": "dagger",
+      "name": "匕首",
+      "cost": 0,
+      "type": "attack",
+      "rarity": "common",
+      "target": "enemy",
+      "text": "3 点伤害",
+      "effects": [{ "kind": "damage", "amount": 3 }]
+    },
+    {
+      "id": "dodge",
+      "name": "闪避",
+      "cost": 1,
+      "type": "skill",
+      "rarity": "common",
+      "target": "self",
+      "text": "4 点格挡",
+      "effects": [{ "kind": "block", "amount": 4 }]
+    },
+    {
+      "id": "shadow_strike",
+      "name": "影袭",
+      "cost": 1,
+      "type": "attack",
+      "rarity": "common",
+      "target": "enemy",
+      "text": "4 伤害 + 抽 1",
+      "effects": [
+        { "kind": "damage", "amount": 4 },
+        { "kind": "draw", "count": 1 }
+      ]
+    },
+    {
+      "id": "cleave",
+      "name": "横扫",
+      "cost": 1,
+      "type": "attack",
+      "rarity": "common",
+      "target": "all",
+      "text": "全体 8 伤害",
+      "effects": [{ "kind": "damage", "amount": 8, "target": "all" }]
+    },
+    {
+      "id": "twin_strike",
+      "name": "连击",
+      "cost": 1,
+      "type": "attack",
+      "rarity": "common",
+      "target": "enemy",
+      "text": "5 伤害 ×2",
+      "effects": [{ "kind": "damage", "amount": 5, "times": 2 }]
+    },
+    {
+      "id": "iron_wall",
+      "name": "铁壁",
+      "cost": 2,
+      "type": "skill",
+      "rarity": "common",
+      "target": "self",
+      "text": "12 点格挡",
+      "effects": [{ "kind": "block", "amount": 12 }]
+    },
+    {
+      "id": "quick_step",
+      "name": "疾行",
+      "cost": 1,
+      "type": "skill",
+      "rarity": "common",
+      "target": "self",
+      "text": "抽 2 张",
+      "effects": [{ "kind": "draw", "count": 2 }]
+    },
+    {
+      "id": "guard",
+      "name": "护心",
+      "cost": 1,
+      "type": "skill",
+      "rarity": "common",
+      "target": "self",
+      "text": "8 格挡 + 抽 1",
+      "effects": [
+        { "kind": "block", "amount": 8 },
+        { "kind": "draw", "count": 1 }
+      ]
+    },
+    {
+      "id": "rend",
+      "name": "破甲",
+      "cost": 1,
+      "type": "attack",
+      "rarity": "uncommon",
+      "target": "enemy",
+      "text": "5 伤害 + 3 易伤",
+      "effects": [
+        { "kind": "damage", "amount": 5 },
+        { "kind": "apply", "status": "vulnerable", "stacks": 3, "target": "enemy" }
+      ]
+    },
+    {
+      "id": "intimidate",
+      "name": "恐吓",
+      "cost": 1,
+      "type": "skill",
+      "rarity": "uncommon",
+      "target": "all",
+      "text": "全体 2 虚弱",
+      "effects": [{ "kind": "apply", "status": "weak", "stacks": 2, "target": "all" }]
+    },
+    {
+      "id": "flex",
+      "name": "蓄力",
+      "cost": 0,
+      "type": "skill",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "+2 力量",
+      "effects": [{ "kind": "apply", "status": "strength", "stacks": 2, "target": "self" }]
+    },
+    {
+      "id": "heavy_blow",
+      "name": "重锤",
+      "cost": 2,
+      "type": "attack",
+      "rarity": "uncommon",
+      "target": "enemy",
+      "text": "14 点伤害",
+      "effects": [{ "kind": "damage", "amount": 14 }]
+    },
+    {
+      "id": "lifesteal",
+      "name": "吸血打击",
+      "cost": 1,
+      "type": "attack",
+      "rarity": "uncommon",
+      "target": "enemy",
+      "text": "6 伤害 + 回 3",
+      "effects": [
+        { "kind": "damage", "amount": 6 },
+        { "kind": "heal", "amount": 3 }
+      ]
+    },
+    {
+      "id": "battle_trance",
+      "name": "战意",
+      "cost": 0,
+      "type": "skill",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "抽 3 张 · 消耗",
+      "exhaust": true,
+      "effects": [{ "kind": "draw", "count": 3 }]
+    },
+    {
+      "id": "recharge",
+      "name": "蓄能",
+      "cost": 0,
+      "type": "skill",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "+2 能量 · 消耗",
+      "exhaust": true,
+      "effects": [{ "kind": "energy", "amount": 2 }]
+    },
+    {
+      "id": "berserk",
+      "name": "狂暴",
+      "cost": 1,
+      "type": "skill",
+      "rarity": "rare",
+      "target": "self",
+      "text": "+3 力量 · -4 生命",
+      "effects": [
+        { "kind": "apply", "status": "strength", "stacks": 3, "target": "self" },
+        { "kind": "selfDamage", "amount": 4 }
+      ]
+    },
+    {
+      "id": "whirlwind",
+      "name": "漩涡",
+      "cost": 2,
+      "type": "attack",
+      "rarity": "rare",
+      "target": "all",
+      "text": "全体 5 伤害 ×3",
+      "effects": [{ "kind": "damage", "amount": 5, "times": 3, "target": "all" }]
+    },
+    {
+      "id": "impervious",
+      "name": "不灭壁垒",
+      "cost": 2,
+      "type": "skill",
+      "rarity": "rare",
+      "target": "self",
+      "text": "24 格挡 · 消耗",
+      "exhaust": true,
+      "effects": [{ "kind": "block", "amount": 24 }]
+    },
+
+    {
+      "id": "demon_form",
+      "name": "恶魔形态",
+      "cost": 2,
+      "type": "power",
+      "rarity": "rare",
+      "target": "self",
+      "text": "每回合开始 +2 力量",
+      "triggers": [
+        { "on": "turnStart", "effects": [{ "kind": "apply", "status": "strength", "stacks": 2, "target": "self" }] }
+      ]
+    },
+    {
+      "id": "metallicize",
+      "name": "金属化",
+      "cost": 1,
+      "type": "power",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "回合结束获得 3 格挡",
+      "triggers": [
+        { "on": "turnEnd", "effects": [{ "kind": "block", "amount": 3 }] }
+      ]
+    },
+    {
+      "id": "barricade",
+      "name": "屏障",
+      "cost": 3,
+      "type": "power",
+      "rarity": "rare",
+      "target": "self",
+      "text": "格挡不再在回合开始时清零",
+      "keepBlock": true
+    },
+    {
+      "id": "combo_master",
+      "name": "连击大师",
+      "cost": 1,
+      "type": "power",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "每打出 3 张攻击牌，抽 1 张",
+      "triggers": [
+        {
+          "on": "cardPlayed",
+          "cardType": "attack",
+          "every": 3,
+          "effects": [{ "kind": "draw", "count": 1 }]
+        }
+      ]
+    },
+    {
+      "id": "insight",
+      "name": "洞察",
+      "cost": 1,
+      "type": "power",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "每回合开始时抽 1 张",
+      "triggers": [
+        { "on": "turnStart", "effects": [{ "kind": "draw", "count": 1 }] }
+      ]
+    },
+    {
+      "id": "energy_core",
+      "name": "能量核心",
+      "cost": 2,
+      "type": "power",
+      "rarity": "rare",
+      "target": "self",
+      "text": "每回合开始 +1 能量",
+      "triggers": [
+        { "on": "turnStart", "effects": [{ "kind": "energy", "amount": 1 }] }
+      ]
+    },
+    {
+      "id": "thorns",
+      "name": "荆棘",
+      "cost": 1,
+      "type": "power",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "受到伤害时，对全体敌人造成 2 点伤害",
+      "triggers": [
+        { "on": "damageTaken", "effects": [{ "kind": "damage", "amount": 2, "target": "all" }] }
+      ]
+    },
+    {
+      "id": "iron_will",
+      "name": "铁壁意志",
+      "cost": 1,
+      "type": "power",
+      "rarity": "uncommon",
+      "target": "self",
+      "text": "战斗开始时获得 8 点格挡",
+      "triggers": [
+        { "on": "combatStart", "effects": [{ "kind": "block", "amount": 8 }] }
+      ]
+    }
+  ]
+}

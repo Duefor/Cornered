@@ -1,6 +1,7 @@
 package dev.duefor.cornered.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -20,12 +22,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.duefor.cornered.game.Card
+import dev.duefor.cornered.game.Relic
 import dev.duefor.cornered.game.RunState
 import dev.duefor.cornered.ui.theme.AccentCyan
 import dev.duefor.cornered.ui.theme.Ink
@@ -49,7 +53,13 @@ fun RewardScreen(
         Text("战斗胜利", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
         Spacer(Modifier.height(8.dp))
         Text("获得 ${run.lastGoldGain} 金币", fontSize = 13.sp, color = Color(0xFFE9B44C))
-        Spacer(Modifier.height(28.dp))
+
+        run.pendingRelic?.let { relic ->
+            Spacer(Modifier.height(16.dp))
+            RelicBadge(relic)
+        }
+
+        Spacer(Modifier.height(22.dp))
         Text("选择一张牌加入牌组", fontSize = 12.sp, color = InkMuted)
         Spacer(Modifier.height(12.dp))
 
@@ -67,6 +77,75 @@ fun RewardScreen(
         TextButton(onClick = { onTake(null) }) {
             Text("跳过，不加牌", color = InkMuted, fontSize = 13.sp)
         }
+    }
+}
+
+/** 幕间结算：金币 + 三选一 + 必得遗物 */
+@Composable
+fun ActClearScreen(
+    run: RunState,
+    onTake: (Card?) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF0B0F14))
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text("幕间", fontSize = 24.sp, fontWeight = FontWeight.Black, color = AccentCyan)
+        Spacer(Modifier.height(6.dp))
+        Text("${run.act.name} 已通过", fontSize = 12.sp, color = InkMuted)
+        Spacer(Modifier.height(10.dp))
+        Text("获得 ${run.lastGoldGain} 金币", fontSize = 13.sp, color = Color(0xFFE9B44C))
+
+        run.pendingRelic?.let { relic ->
+            Spacer(Modifier.height(16.dp))
+            RelicBadge(relic)
+        }
+
+        Spacer(Modifier.height(22.dp))
+        Text("选择一张牌进入下一幕", fontSize = 12.sp, color = InkMuted)
+        Spacer(Modifier.height(12.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            run.rewardCards.forEach { card ->
+                CardView(card = card, width = 88.dp, onClick = { onTake(card) })
+            }
+        }
+
+        Spacer(Modifier.height(22.dp))
+        Button(
+            onClick = { onTake(null) },
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AccentCyan,
+                contentColor = Color(0xFF06231F),
+            ),
+        ) {
+            Text("进入下一幕", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun RelicBadge(relic: Relic) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(0.8f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF2E2618))
+            .border(1.dp, Color(0xFFE9B44C), RoundedCornerShape(12.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("获得遗物", fontSize = 10.sp, color = Color(0xFFE9B44C))
+        Spacer(Modifier.height(4.dp))
+        Text(relic.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Ink)
+        Spacer(Modifier.height(2.dp))
+        Text(relic.text, fontSize = 10.sp, color = InkMuted, textAlign = TextAlign.Center)
     }
 }
 
@@ -96,7 +175,7 @@ fun TreasureScreen(
             Spacer(Modifier.height(28.dp))
             Button(
                 onClick = onContinue,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AccentCyan,
                     contentColor = Color(0xFF06231F),
@@ -151,7 +230,7 @@ private fun RestOption(title: String, detail: String, enabled: Boolean = true, o
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF16212B),
             contentColor = Ink,

@@ -30,9 +30,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.duefor.cornered.data.RunRecords
+import dev.duefor.cornered.data.ContentRepository
 import dev.duefor.cornered.data.RunRepository
 import dev.duefor.cornered.game.Character
-import dev.duefor.cornered.game.Characters
+import dev.duefor.cornered.game.GameContent
 import dev.duefor.cornered.game.RunPhase
 import dev.duefor.cornered.game.RunState
 import dev.duefor.cornered.ui.CharacterScreen
@@ -50,6 +51,8 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 内容全部来自 assets/content/*.json，解析失败会在这里直接暴露
+        ContentRepository.load(this)
         // 系统栏图标用浅色，背景交给内容自己画，避免出现一条浅色导航栏
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
@@ -75,7 +78,7 @@ private fun CorneredApp() {
 
     var screen by remember { mutableStateOf(Screen.Menu) }
     var run by remember { mutableStateOf<RunState?>(null) }
-    var hasSave by remember { mutableStateOf(repository.hasSave()) }
+    var hasSave by remember { mutableStateOf(repository.hasValidSave()) }
     var bestFloor by remember { mutableIntStateOf(records.bestFloor) }
     var victories by remember { mutableIntStateOf(records.victories) }
     var showUpdate by remember { mutableStateOf(false) }
@@ -132,7 +135,7 @@ private fun CorneredApp() {
             )
 
             Screen.Character -> CharacterScreen(
-                characters = Characters.all,
+                characters = GameContent.characters,
                 onStart = { character -> startNewRun(character) },
                 onBack = { screen = Screen.Menu },
             )
